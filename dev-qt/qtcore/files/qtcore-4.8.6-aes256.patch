@@ -1,0 +1,60 @@
+--- a/src/network/ssl/qsslkey.cpp.old	2014-04-10 19:37:12.000000000 +0100
++++ b/src/network/ssl/qsslkey.cpp	2015-03-31 13:05:42.993898521 +0100
+@@ -374,7 +374,7 @@
+             if (!q_PEM_write_bio_RSAPrivateKey(
+                     bio, d->rsa,
+                     // ### the cipher should be selectable in the API:
+-                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_des_ede3_cbc(),
++                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_aes_256_cbc(),
+                     (uchar *)passPhrase.data(), passPhrase.size(), 0, 0)) {
+                 fail = true;
+             }
+@@ -387,7 +387,7 @@
+             if (!q_PEM_write_bio_DSAPrivateKey(
+                     bio, d->dsa,
+                     // ### the cipher should be selectable in the API:
+-                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_des_ede3_cbc(),
++                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_aes_256_cbc(),
+                     (uchar *)passPhrase.data(), passPhrase.size(), 0, 0)) {
+                 fail = true;
+             }
+--- a/src/network/ssl/qsslsocket_openssl_symbols.cpp.old	2015-03-31 05:01:52.083067997 +0100
++++ b/src/network/ssl/qsslsocket_openssl_symbols.cpp	2015-03-31 13:04:51.689299366 +0100
+@@ -125,7 +125,7 @@
+ #endif
+ DEFINEFUNC2(char *, ERR_error_string, unsigned long a, a, char *b, b, return 0, return)
+ DEFINEFUNC(unsigned long, ERR_get_error, DUMMYARG, DUMMYARG, return 0, return)
+-DEFINEFUNC(const EVP_CIPHER *, EVP_des_ede3_cbc, DUMMYARG, DUMMYARG, return 0, return)
++DEFINEFUNC(const EVP_CIPHER *, EVP_aes_256_cbc, DUMMYARG, DUMMYARG, return 0, return)
+ DEFINEFUNC3(int, EVP_PKEY_assign, EVP_PKEY *a, a, int b, b, char *c, c, return -1, return)
+ DEFINEFUNC2(int, EVP_PKEY_set1_RSA, EVP_PKEY *a, a, RSA *b, b, return -1, return)
+ DEFINEFUNC2(int, EVP_PKEY_set1_DSA, EVP_PKEY *a, a, DSA *b, b, return -1, return)
+@@ -616,7 +616,7 @@
+     RESOLVEFUNC(DSA_free, 594, libs.second )
+     RESOLVEFUNC(ERR_error_string, 744, libs.second )
+     RESOLVEFUNC(ERR_get_error, 749, libs.second )
+-    RESOLVEFUNC(EVP_des_ede3_cbc, 919, libs.second )
++    RESOLVEFUNC(EVP_aes_256_cbc, 919, libs.second )
+     RESOLVEFUNC(EVP_PKEY_assign, 859, libs.second )
+     RESOLVEFUNC(EVP_PKEY_set1_RSA, 880, libs.second )
+     RESOLVEFUNC(EVP_PKEY_set1_DSA, 879, libs.second )
+@@ -749,7 +749,7 @@
+     RESOLVEFUNC(DSA_free)
+     RESOLVEFUNC(ERR_error_string)
+     RESOLVEFUNC(ERR_get_error)
+-    RESOLVEFUNC(EVP_des_ede3_cbc)
++    RESOLVEFUNC(EVP_aes_256_cbc)
+     RESOLVEFUNC(EVP_PKEY_assign)
+     RESOLVEFUNC(EVP_PKEY_set1_RSA)
+     RESOLVEFUNC(EVP_PKEY_set1_DSA)
+--- a/src/network/ssl/qsslsocket_openssl_symbols_p.h.old	2015-03-31 13:07:16.146986424 +0100
++++ b/src/network/ssl/qsslsocket_openssl_symbols_p.h	2015-03-31 13:07:28.671132692 +0100
+@@ -226,7 +226,7 @@
+ #endif
+ char *q_ERR_error_string(unsigned long a, char *b);
+ unsigned long q_ERR_get_error();
+-const EVP_CIPHER *q_EVP_des_ede3_cbc();
++const EVP_CIPHER *q_EVP_aes_256_cbc();
+ int q_EVP_PKEY_assign(EVP_PKEY *a, int b, char *c);
+ int q_EVP_PKEY_set1_RSA(EVP_PKEY *a, RSA *b);
+ int q_EVP_PKEY_set1_DSA(EVP_PKEY *a, DSA *b);
