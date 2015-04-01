@@ -1,0 +1,79 @@
+--- openvpn-2.3.6/src/openvpn/crypto.c.old	2014-11-29 15:00:35.000000000 +0000
++++ openvpn-2.3.6/src/openvpn/crypto.c	2015-04-01 13:37:23.628870627 +0100
+@@ -552,6 +552,7 @@
+       if (key_is_zero(key, kt))
+ 	return false;
+ 
++#ifndef OPENSSL_NO_DES
+       /*
+        * Check for weak or semi-weak DES keys.
+        */
+@@ -562,6 +563,7 @@
+ 	else
+ 	  return true;
+       }
++#endif
+     }
+   return true;
+ }
+@@ -583,11 +585,12 @@
+ #ifdef ENABLE_DEBUG
+       const struct key orig = *key;
+ #endif
++#ifndef OPENSSL_NO_DES
+       const int ndc = key_des_num_cblocks (kt->cipher);
+ 
+       if (ndc)
+ 	key_des_fixup (key->cipher, kt->cipher_length, ndc);
+-
++#endif
+ #ifdef ENABLE_DEBUG
+       if (check_debug_level (D_CRYPTO_DEBUG))
+ 	{
+--- openvpn-2.3.6/src/openvpn/crypto_openssl.c.old	2015-04-01 13:30:06.395867245 +0100
++++ openvpn-2.3.6/src/openvpn/crypto_openssl.c	2015-04-01 13:33:22.694124778 +0100
+@@ -44,7 +44,9 @@
+ #include "crypto_backend.h"
+ #include <openssl/objects.h>
+ #include <openssl/evp.h>
++#ifndef OPENSSL_NO_DES
+ #include <openssl/des.h>
++#endif
+ 
+ /*
+  * Check for key size creepage.
+@@ -387,7 +389,7 @@
+  *
+  */
+ 
+-
++#ifndef OPENSSL_NO_DES
+ int
+ key_des_num_cblocks (const EVP_CIPHER *kt)
+ {
+@@ -461,7 +463,7 @@
+       DES_set_odd_parity (dc);
+     }
+ }
+-
++#endif
+ 
+ /*
+  *
+@@ -626,7 +628,7 @@
+   return EVP_CipherFinal (ctx, dst, dst_len);
+ }
+ 
+-
++#ifndef OPENSSL_NO_DES
+ void
+ cipher_des_encrypt_ecb (const unsigned char key[DES_KEY_LENGTH],
+     unsigned char *src,
+@@ -637,6 +639,7 @@
+     DES_set_key_unchecked((DES_cblock*)key, &sched);
+     DES_ecb_encrypt((DES_cblock *)src, (DES_cblock *)dst, &sched, DES_ENCRYPT);
+ }
++#endif
+ 
+ /*
+  *
