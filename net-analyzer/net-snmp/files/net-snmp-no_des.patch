@@ -1,0 +1,12 @@
+--- snmplib/scapi.c.old	2015-04-20 05:53:00.018321755 +0100
++++ snmplib/scapi.c	2015-04-20 05:58:15.605357583 +0100
+@@ -79,7 +79,9 @@
+ #include <openssl/hmac.h>
+ #include <openssl/evp.h>
+ #include <openssl/rand.h>
++#ifndef NETSNMP_DISABLE_DES
+ #include <openssl/des.h>
++#endif
+ #ifdef HAVE_AES
+ #include <openssl/aes.h>
+ #endif
