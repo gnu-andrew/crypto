@@ -1,6 +1,6 @@
 # Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/net-misc/openssh/openssh-6.8_p1-r3.ebuild,v 1.1 2015/03/25 21:06:03 vapier Exp $
+# $Header: /var/cvsroot/gentoo-x86/net-misc/openssh/openssh-6.8_p1-r5.ebuild,v 1.1 2015/04/28 04:39:35 vapier Exp $
 
 EAPI="4"
 inherit eutils user flag-o-matic multilib autotools pam systemd versionator
@@ -9,9 +9,9 @@ inherit eutils user flag-o-matic multilib autotools pam systemd versionator
 # and _p? releases.
 PARCH=${P/_}
 
-HPN_PATCH="${PN}-6.8p1-r4-hpnssh14v5.tar.xz"
+HPN_PATCH="${PN}-6.8p1-r5-hpnssh14v5.tar.xz"
 LDAP_PATCH="${PN}-lpk-6.8p1-0.3.14.patch.xz"
-X509_VER="8.3" X509_PATCH="${PARCH}+x509-${X509_VER}.diff.gz"
+X509_VER="8.3.1" X509_PATCH="${PARCH}+x509-${X509_VER}.diff.gz"
 
 DESCRIPTION="Port of OpenBSD's free SSH release"
 HOMEPAGE="http://www.openssh.org/"
@@ -25,13 +25,14 @@ SRC_URI="mirror://openbsd/OpenSSH/portable/${PARCH}.tar.gz
 	${LDAP_PATCH:+ldap? ( mirror://gentoo/${LDAP_PATCH} )}
 	${X509_PATCH:+X509? (
 		http://roumenpetrov.info/openssh/x509-${X509_VER}/${X509_PATCH}
-		mirror://gentoo/${P}-x509-glue.patch.xz
+		mirror://gentoo/${P}-x509-${X509_VER}-glue.patch.xz
 	)}
 	"
 
 LICENSE="BSD GPL-2"
 SLOT="0"
 KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~m68k ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86 ~amd64-fbsd ~sparc-fbsd ~x86-fbsd ~arm-linux ~x86-linux"
+# Probably want to drop ssh1/ssl defaulting to on in a future version.
 IUSE="bindist debug ${HPN_PATCH:++}hpn kerberos kernel_linux ldap ldns libedit pam +pie sctp selinux skey ssh1 +ssl static X X509"
 REQUIRED_USE="pie? ( !static )
 	ssh1? ( ssl )
@@ -122,7 +123,7 @@ src_prepare() {
 	epatch "${FILESDIR}"/${PN}-6.8_p1-sshd-gssapi-multihomed.patch #378361
 	if use X509 ; then
 		pushd .. >/dev/null
-		epatch "${WORKDIR}"/${P}-x509-glue.patch
+		epatch "${WORKDIR}"/${P}-x509-${X509_VER}-glue.patch
 		epatch "${FILESDIR}"/${P}-sctp-x509-glue.patch
 		popd >/dev/null
 		epatch "${WORKDIR}"/${X509_PATCH%.*}
@@ -136,11 +137,18 @@ src_prepare() {
 	epatch "${FILESDIR}"/${PN}-4.7_p1-GSSAPI-dns.patch #165444 integrated into gsskex
 	epatch "${FILESDIR}"/${PN}-6.7_p1-openssl-ignore-status.patch
 	epatch "${FILESDIR}"/${PN}-6.8_p1-ssh-keygen-no-ssh1.patch #544078
+	epatch "${FILESDIR}"/${PN}-6.8_p1-teraterm.patch #547944
 	# The X509 patchset fixes this independently.
 	use X509 || epatch "${FILESDIR}"/${PN}-6.8_p1-ssl-engine-configure.patch
 	epatch "${WORKDIR}"/${P}-sctp.patch
 	if use hpn ; then
-		epatch "${WORKDIR}"/${HPN_PATCH%.*.*}/*
+		# The teraterm patch pulled in an upstream update.
+		pushd "${WORKDIR}"/${HPN_PATCH%.*.*} >/dev/null
+		epatch "${FILESDIR}"/${PN}-6.8_p1-teraterm-hpn-glue.patch
+		popd >/dev/null
+		EPATCH_FORCE="yes" EPATCH_SUFFIX="patch" \
+			EPATCH_MULTI_MSG="Applying HPN patchset ..." \
+			epatch "${WORKDIR}"/${HPN_PATCH%.*.*}
 		save_version HPN
 	fi
 	epatch "${FILESDIR}"/${P}-no_des_rc4.patch

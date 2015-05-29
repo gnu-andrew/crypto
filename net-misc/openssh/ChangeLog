@@ -2,6 +2,25 @@
 # Copyright 1999-2015 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/net-misc/openssh/ChangeLog,v 1.557 2015/03/25 21:06:03 vapier Exp $
 
+  04 May 2015; Mike Frysinger <vapier@gentoo.org> files/sshd.rc6.4:
+  Clean up depend scan logic a bit.
+
+*openssh-6.8_p1-r5 (28 Apr 2015)
+
+  28 Apr 2015; Mike Frysinger <vapier@gentoo.org>
+  +files/openssh-6.8_p1-teraterm-hpn-glue.patch,
+  +files/openssh-6.8_p1-teraterm.patch, +openssh-6.8_p1-r5.ebuild:
+  Add fix from upstream for old TeraTerm clients #547944 by William Hubbs. Pull
+  in some upstream hpn updates.
+
+  13 Apr 2015; Mike Frysinger <vapier@gentoo.org> files/sshd.rc6.4:
+  Use SSHD_CONFIG everywhere #546008 by Alexander Sulfrian.
+
+*openssh-6.8_p1-r4 (06 Apr 2015)
+
+  06 Apr 2015; Patrick McLean <chutzpah@gentoo.org> +openssh-6.8_p1-r4.ebuild:
+  Revision bump, bump the X509 patch to version 8.3.1.
+
 *openssh-6.8_p1-r3 (25 Mar 2015)
 
   25 Mar 2015; Mike Frysinger <vapier@gentoo.org> +openssh-6.8_p1-r3.ebuild:
