@@ -1,0 +1,66 @@
+--- src/network/ssl/qsslsocket_openssl_symbols.cpp.old	2015-04-26 17:11:52.681351501 +0100
++++ src/network/ssl/qsslsocket_openssl_symbols.cpp	2015-04-26 17:20:15.669954489 +0100
+@@ -156,7 +156,11 @@
+ DEFINEFUNC2(char *, ERR_error_string, unsigned long a, a, char *b, b, return 0, return)
+ DEFINEFUNC(unsigned long, ERR_get_error, DUMMYARG, DUMMYARG, return 0, return)
+ DEFINEFUNC(void, ERR_free_strings, void, DUMMYARG, return, DUMMYARG)
++#ifdef OPENSSL_NO_DES
++DEFINEFUNC(const EVP_CIPHER *, EVP_aes_256_cbc, DUMMYARG, DUMMYARG, return 0, return)
++#else
+ DEFINEFUNC(const EVP_CIPHER *, EVP_des_ede3_cbc, DUMMYARG, DUMMYARG, return 0, return)
++#endif
+ DEFINEFUNC3(int, EVP_PKEY_assign, EVP_PKEY *a, a, int b, b, char *c, c, return -1, return)
+ DEFINEFUNC2(int, EVP_PKEY_set1_RSA, EVP_PKEY *a, a, RSA *b, b, return -1, return)
+ DEFINEFUNC2(int, EVP_PKEY_set1_DSA, EVP_PKEY *a, a, DSA *b, b, return -1, return)
+@@ -726,7 +730,11 @@
+     RESOLVEFUNC(ERR_error_string)
+     RESOLVEFUNC(ERR_get_error)
+     RESOLVEFUNC(ERR_free_strings)
++#ifdef OPENSSL_NO_DES
++    RESOLVEFUNC(EVP_aes_256_cbc)
++#else	
+     RESOLVEFUNC(EVP_des_ede3_cbc)
++#endif
+     RESOLVEFUNC(EVP_PKEY_assign)
+     RESOLVEFUNC(EVP_PKEY_set1_RSA)
+     RESOLVEFUNC(EVP_PKEY_set1_DSA)
+--- src/network/ssl/qsslsocket_openssl_symbols_p.h.old	2015-04-26 17:11:56.469386167 +0100
++++ src/network/ssl/qsslsocket_openssl_symbols_p.h	2015-04-26 17:20:38.734165550 +0100
+@@ -236,7 +236,11 @@
+ char *q_ERR_error_string(unsigned long a, char *b);
+ unsigned long q_ERR_get_error();
+ void q_ERR_free_strings();
++#ifdef OPENSSL_NO_DES
++const EVP_CIPHER *q_EVP_aes_256_cbc();
++#else
+ const EVP_CIPHER *q_EVP_des_ede3_cbc();
++#endif
+ int q_EVP_PKEY_assign(EVP_PKEY *a, int b, char *c);
+ Q_AUTOTEST_EXPORT int q_EVP_PKEY_set1_RSA(EVP_PKEY *a, RSA *b);
+ int q_EVP_PKEY_set1_DSA(EVP_PKEY *a, DSA *b);
+--- src/network/ssl/qsslkey_openssl.cpp.old	2015-04-26 17:16:22.243818376 +0100
++++ src/network/ssl/qsslkey_openssl.cpp	2015-04-26 17:18:50.365173860 +0100
+@@ -177,7 +177,11 @@
+             if (!q_PEM_write_bio_RSAPrivateKey(
+                     bio, rsa,
+                     // ### the cipher should be selectable in the API:
++#ifdef OPENSSL_NO_DES
++                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_aes_256_cbc(),
++#else
+                     passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_des_ede3_cbc(),
++#endif
+                     (uchar *)passPhrase.data(), passPhrase.size(), 0, 0)) {
+                 fail = true;
+             }
+@@ -190,7 +194,11 @@
+             if (!q_PEM_write_bio_DSAPrivateKey(
+                     bio, dsa,
+                     // ### the cipher should be selectable in the API:
++#ifdef OPENSSL_NO_DES
++                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_aes_256_cbc(),
++#else
+                     passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_des_ede3_cbc(),
++#endif
+                     (uchar *)passPhrase.data(), passPhrase.size(), 0, 0)) {
+                 fail = true;
+             }
