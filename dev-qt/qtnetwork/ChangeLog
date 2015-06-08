@@ -2,6 +2,11 @@
 # Copyright 1999-2015 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/dev-qt/qtnetwork/ChangeLog,v 1.15 2015/04/25 18:24:48 kensington Exp $
 
+  08 Jun 2015; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  qtnetwork-5.4.1.ebuild:
+  Avoid overridding src_prepare function of qt5-build eclass in qtnetwork
+  ebuild.
+
   25 Apr 2015; Michael Palimaka <kensington@gentoo.org> metadata.xml:
   Add description for bindist USE flag.
 

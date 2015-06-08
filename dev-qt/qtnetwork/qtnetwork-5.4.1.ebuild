@@ -41,13 +41,13 @@ QT5_GENTOO_CONFIG=(
 	ssl:openssl-linked:LINKED_OPENSSL
 )
 
+PATCHES=(
+	"${FILESDIR}/${PN}-aes256.patch"
+)
+
 pkg_setup() {
 	use connman && QT5_TARGET_SUBDIRS+=(src/plugins/bearer/connman)
 	use networkmanager && QT5_TARGET_SUBDIRS+=(src/plugins/bearer/networkmanager)
-}
-
-src_prepare() {
-	epatch "${FILESDIR}/${PN}-aes256.patch"
 }
 
 src_configure() {
