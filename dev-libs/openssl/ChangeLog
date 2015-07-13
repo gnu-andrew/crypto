@@ -2,6 +2,19 @@
 # Copyright 1999-2015 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/dev-libs/openssl/ChangeLog,v 1.577 2014/08/07 18:12:48 jer Exp $
 
+*openssl-1.0.2d (13 Jul 2015)
+
+  13 Jul 2015; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/openssl-1.0.1p-default-source.patch,
+  +files/openssl-1.0.2a-parallel-install-dirs.patch,
+  +files/openssl-1.0.2a-parallel-obj-headers.patch,
+  +files/openssl-1.0.2a-parallel-symlinking.patch,
+  +files/openssl-1.0.2d-parallel-build.patch, +openssl-1.0.2d.ebuild,
+  -files/openssl-1.0.2-s_client-verify.patch,
+  -files/openssl-1.0.2a-malloc-typo.patch,
+  -files/openssl-1.0.2a-parallel-build.patch, -openssl-1.0.2a.ebuild:
+  Bump OpenSSL build to 1.0.2d.
+
 *openssl-1.0.2a (27 Mar 2015)
 
   27 Mar 2015; Andrew John Hughes <gnu_andrew@member.fsf.org>

@@ -1,6 +1,6 @@
 # Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/dev-libs/openssl/openssl-1.0.2a.ebuild,v 1.6 2015/03/21 11:02:41 vapier Exp $
+# $Header: /var/cvsroot/gentoo-x86/dev-libs/openssl/openssl-1.0.2d.ebuild,v 1.2 2015/07/10 06:08:30 vapier Exp $
 
 EAPI="4"
 
@@ -59,12 +59,14 @@ src_prepare() {
 	if ! use vanilla ; then
 		epatch "${FILESDIR}"/${PN}-1.0.0a-ldflags.patch #327421
 		epatch "${FILESDIR}"/${PN}-1.0.0d-windres.patch #373743
-		epatch "${FILESDIR}"/${PN}-1.0.2a-parallel-build.patch
+		epatch "${FILESDIR}"/${PN}-1.0.2d-parallel-build.patch
+		epatch "${FILESDIR}"/${PN}-1.0.2a-parallel-obj-headers.patch
+		epatch "${FILESDIR}"/${PN}-1.0.2a-parallel-install-dirs.patch
+		epatch "${FILESDIR}"/${PN}-1.0.2a-parallel-symlinking.patch #545028
 		epatch "${FILESDIR}"/${PN}-1.0.2-ipv6.patch
-		epatch "${FILESDIR}"/${PN}-1.0.2-s_client-verify.patch #472584
-		epatch "${FILESDIR}"/${PN}-1.0.2a-malloc-typo.patch #543828
 		epatch "${FILESDIR}"/${PN}-1.0.2a-x32-asm.patch #542618
 		epatch "${FILESDIR}"/${PN}-1.0.2-no_des.patch
+		epatch "${FILESDIR}"/${PN}-1.0.1p-default-source.patch #554338
 
 		epatch_user #332661
 	fi
@@ -122,7 +124,7 @@ multilib_src_configure() {
 	# IDEA:     Expired                 http://en.wikipedia.org/wiki/International_Data_Encryption_Algorithm
 	# EC:       ????????? ??/??/2015    http://en.wikipedia.org/wiki/Elliptic_Curve_Cryptography
 	# MDC2:     Expired                 http://en.wikipedia.org/wiki/MDC-2
-+	# RC5:      Expired                 http://en.wikipedia.org/wiki/RC5
+	# RC5:      Expired                 http://en.wikipedia.org/wiki/RC5
 
 	use_ssl() { usex $1 "enable-${2:-$1}" "no-${2:-$1}" " ${*:3}" ; }
 	echoit() { echo "$@" ; "$@" ; }
