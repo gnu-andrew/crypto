@@ -2,6 +2,13 @@
 # Copyright 1999-2015 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/dev-qt/qtcore/ChangeLog,v 1.68 2015/03/29 03:42:21 pesa Exp $
 
+*qtcore-4.8.7 (11 Sep 2015)
+
+  11 Sep 2015; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/qtcore-aes256.patch, +qtcore-4.8.7.ebuild,
+  -files/qtcore-4.8.6-aes256.patch, -qtcore-4.8.6-r1.ebuild:
+  dev-qt/qtcore: Update to 4.8.7.
+
   29 Mar 2015; Davide Pesavento <pesa@gentoo.org> qtcore-4.8.5-r2.ebuild:
   Add blocker to prevent file collision on downgrade, thanks to Zero_Chaos in
   bug #544666.

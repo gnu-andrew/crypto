@@ -1,17 +1,14 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/dev-qt/qtcore/qtcore-4.8.6-r1.ebuild,v 1.1 2014/11/15 02:35:51 pesa Exp $
+# $Id$
 
 EAPI=5
-
 inherit qt4-build-multilib
 
 DESCRIPTION="Cross-platform application development framework"
 
-if [[ ${QT4_BUILD_TYPE} == live ]]; then
-	KEYWORDS=""
-else
-	KEYWORDS="~alpha ~amd64 ~arm ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86 ~amd64-fbsd ~x86-fbsd ~x86-freebsd ~amd64-linux ~x86-linux ~ppc-macos ~x64-macos ~x86-macos ~x64-solaris ~x86-solaris"
+if [[ ${QT4_BUILD_TYPE} == release ]]; then
+	KEYWORDS="~amd64"
 fi
 
 IUSE="+glib iconv icu qt3support ssl"
@@ -19,6 +16,7 @@ IUSE="+glib iconv icu qt3support ssl"
 DEPEND="
 	>=sys-libs/zlib-1.2.8-r1[${MULTILIB_USEDEP}]
 	glib? ( dev-libs/glib:2[${MULTILIB_USEDEP}] )
+	iconv? ( >=virtual/libiconv-0-r2[${MULTILIB_USEDEP}] )
 	icu? ( dev-libs/icu:=[${MULTILIB_USEDEP}] )
 	ssl? ( >=dev-libs/openssl-1.0.1h-r2:0[${MULTILIB_USEDEP}] )
 "
@@ -37,7 +35,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-4.8.5-moc-boost-lexical-cast.patch"
 	"${FILESDIR}/${PN}-4.8.5-honor-ExcludeSocketNotifiers-in-glib-event-loop.patch" # bug 514968
 	"${FILESDIR}/${PN}-4.8.5-qeventdispatcher-recursive.patch" # bug 514968
-	"${FILESDIR}/${P}-aes256.patch"
+	"${FILESDIR}/${PN}-aes256.patch"
 )
 
 QT4_TARGET_DIRECTORIES="
