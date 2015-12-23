@@ -1,6 +1,6 @@
 # Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/net-libs/rb_libtorrent/rb_libtorrent-1.0.5.ebuild,v 1.2 2015/05/19 19:40:43 hwoarang Exp $
+# $Id$
 
 EAPI=5
 
@@ -9,15 +9,16 @@ PYTHON_REQ_USE="threads"
 DISTUTILS_OPTIONAL=true
 AUTOTOOLS_AUTORECONF=true
 
-inherit autotools-utils multilib distutils-r1
+inherit autotools-utils multilib distutils-r1 versionator
 
 MY_P=${P/rb_/}
 MY_P=${MY_P/torrent/torrent-rasterbar}
+MY_PV=$(replace_all_version_separators '_' )
 S=${WORKDIR}/${MY_P}
 
 DESCRIPTION="C++ BitTorrent implementation focusing on efficiency and scalability"
-HOMEPAGE="http://www.rasterbar.com/products/libtorrent/"
-SRC_URI="mirror://sourceforge/libtorrent/${MY_P}.tar.gz"
+HOMEPAGE="http://libtorrent.org"
+SRC_URI="https://github.com/arvidn/libtorrent/releases/download/libtorrent-${MY_PV}/${MY_P}.tar.gz"
 
 LICENSE="BSD"
 SLOT="0"
@@ -33,14 +34,17 @@ RDEPEND="
 	ssl? ( dev-libs/openssl:0= )
 	python? (
 		${PYTHON_DEPS}
-		dev-libs/boost[python,${PYTHON_USEDEP}]
+		dev-libs/boost:=[python,${PYTHON_USEDEP}]
 	)"
 DEPEND="${RDEPEND}
 	>=sys-devel/libtool-2.2"
 
 RESTRICT="test"
 
-PATCHES=( "${FILESDIR}"/${PN}-1.0.2-python.patch "${FILESDIR}"/no_rc4.patch )
+PATCHES=(
+	"${FILESDIR}"/${PN}-1.0.2-python.patch
+	"${FILESDIR}"/no_rc4.patch
+)
 
 AUTOTOOLS_IN_SOURCE_BUILD=1
 

@@ -1,5 +1,5 @@
---- include/libtorrent/pe_crypto.hpp.old	2015-07-06 12:37:10.672812503 +0100
-+++ include/libtorrent/pe_crypto.hpp	2015-07-06 12:41:59.779776529 +0100
+--- a/include/libtorrent/pe_crypto.hpp.old	2015-07-06 12:37:10.672812503 +0100
++++ b/include/libtorrent/pe_crypto.hpp	2015-07-06 12:41:59.779776529 +0100
 @@ -39,7 +39,7 @@
  
  #ifdef TORRENT_USE_GCRYPT
@@ -54,8 +54,8 @@
  		RC4_KEY m_local_key; // Key to encrypt outgoing data
  		RC4_KEY m_remote_key; // Key to decrypt incoming data
  #else
---- src/pe_crypto.cpp~	2014-11-07 03:02:39.000000000 +0000
-+++ src/pe_crypto.cpp	2015-07-06 13:51:36.247327809 +0100
+--- a/src/pe_crypto.cpp~	2014-11-07 03:02:39.000000000 +0000
++++ b/src/pe_crypto.cpp	2015-07-06 13:51:36.247327809 +0100
 @@ -303,7 +303,7 @@
  
  } // namespace libtorrent
