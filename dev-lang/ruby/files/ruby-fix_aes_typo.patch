@@ -1,0 +1,14 @@
+--- ext/openssl/ossl_pkcs7.c.old	2016-01-01 07:46:59.817364189 +0000
++++ ext/openssl/ossl_pkcs7.c	2016-01-01 07:47:12.777151324 +0000
+@@ -306,10 +306,8 @@
+ 	ciph = EVP_rc2_40_cbc();
+ #elif !defined(OPENSSL_NO_DES)
+ 	ciph = EVP_des_ede3_cbc();
+-#elif !defined(OPENSSL_NO_RC2)
+-	ciph = EVP_rc2_40_cbc();
+ #elif !defined(OPENSSL_NO_AES)
+-	ciph = EVP_EVP_aes_128_cbc();
++	ciph = EVP_aes_128_cbc();
+ #else
+ 	ossl_raise(ePKCS7Error, "Must specify cipher");
+ #endif
