@@ -1,0 +1,172 @@
+diff -Nru mysql.old/sql/des_key_file.cc mysql/sql/des_key_file.cc
+--- mysql.old/sql/des_key_file.cc	2016-01-28 12:12:51.000000000 +0000
++++ mysql/sql/des_key_file.cc	2016-02-02 03:06:16.297265504 +0000
+@@ -20,6 +20,7 @@
+ #include <m_ctype.h>
+ 
+ #ifdef HAVE_OPENSSL
++#ifndef OPENSSL_NO_DES
+ 
+ struct st_des_keyschedule des_keyschedule[10];
+ uint   des_default_key;
+@@ -103,4 +104,5 @@
+   mysql_mutex_unlock(&LOCK_des_key_file);
+   DBUG_RETURN(result);
+ }
++#endif /* !OPENSSL_NO_DES */
+ #endif /* HAVE_OPENSSL */
+diff -Nru mysql.old/sql/des_key_file.h mysql/sql/des_key_file.h
+--- mysql.old/sql/des_key_file.h	2016-01-28 12:12:51.000000000 +0000
++++ mysql/sql/des_key_file.h	2016-02-02 03:08:37.430940234 +0000
+@@ -17,6 +17,9 @@
+ #define DES_KEY_FILE_INCLUDED
+ 
+ #ifdef HAVE_OPENSSL
++#include <openssl/opensslconf.h>
++
++#ifndef OPENSSL_NO_DES
+ #include <openssl/des.h>
+ 
+ #include "violite.h"                /* DES_cblock, DES_key_schedule */
+@@ -35,6 +38,7 @@
+ extern uint des_default_key;
+ 
+ bool load_des_key_file(const char *file_name);
++#endif /* !OPENSSL_NO_DES */
+ #endif /* HAVE_OPENSSL */
+ 
+ #endif /* DES_KEY_FILE_INCLUDED */
+diff -Nru mysql.old/sql/item_strfunc.cc mysql/sql/item_strfunc.cc
+--- mysql.old/sql/item_strfunc.cc	2016-01-28 12:12:52.000000000 +0000
++++ mysql/sql/item_strfunc.cc	2016-02-03 00:12:02.309149015 +0000
+@@ -776,7 +776,7 @@
+ String *Item_func_des_encrypt::val_str(String *str)
+ {
+   DBUG_ASSERT(fixed == 1);
+-#if defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY)
++#if defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY) && !defined(OPENSSL_NO_DES)
+   uint code= ER_WRONG_PARAMETERS_TO_PROCEDURE;
+   DES_cblock ivec;
+   struct st_des_keyblock keyblock;
+@@ -866,7 +866,7 @@
+   push_warning_printf(thd, Sql_condition::WARN_LEVEL_WARN,
+                       ER_FEATURE_DISABLED, ER_THD(thd, ER_FEATURE_DISABLED),
+                       "des_encrypt", "--with-ssl");
+-#endif /* defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY) */
++#endif /* defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY) && !defined(OPENSSL_NO_DES) */ 
+   null_value=1;
+   return 0;
+ }
+@@ -875,7 +875,7 @@
+ String *Item_func_des_decrypt::val_str(String *str)
+ {
+   DBUG_ASSERT(fixed == 1);
+-#if defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY)
++#if defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY) && !defined(OPENSSL_NO_DES)
+   uint code= ER_WRONG_PARAMETERS_TO_PROCEDURE;
+   DES_cblock ivec;
+   struct st_des_keyblock keyblock;
+@@ -951,7 +951,7 @@
+                         ER_FEATURE_DISABLED, ER_THD(thd, ER_FEATURE_DISABLED),
+                         "des_decrypt", "--with-ssl");
+   }
+-#endif /* defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY) */
++#endif /* defined(HAVE_OPENSSL) && !defined(EMBEDDED_LIBRARY) && !defined(OPENSSL_NO_DES) */
+   null_value=1;
+   return 0;
+ }
+diff -Nru mysql.old/sql/mysqld.cc mysql/sql/mysqld.cc
+--- mysql.old/sql/mysqld.cc	2016-01-28 12:12:52.000000000 +0000
++++ mysql/sql/mysqld.cc	2016-02-03 00:17:08.944019627 +0000
+@@ -734,8 +734,10 @@
+ */
+ mysql_mutex_t LOCK_prepared_stmt_count;
+ #ifdef HAVE_OPENSSL
++#ifndef OPENSSL_NO_DES
+ mysql_mutex_t LOCK_des_key_file;
+ #endif
++#endif
+ mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
+ mysql_rwlock_t LOCK_system_variables_hash;
+ mysql_cond_t COND_thread_count;
+@@ -865,7 +867,9 @@
+ #endif /* HAVE_MMAP */
+ 
+ #ifdef HAVE_OPENSSL
++#ifndef OPENSSL_NO_DES
+ PSI_mutex_key key_LOCK_des_key_file;
++#endif /* !OPENSSL_NO_DES */
+ #endif /* HAVE_OPENSSL */
+ 
+ PSI_mutex_key key_BINLOG_LOCK_index, key_BINLOG_LOCK_xid_list,
+@@ -916,7 +920,9 @@
+ #endif /* HAVE_MMAP */
+ 
+ #ifdef HAVE_OPENSSL
++#ifndef OPENSSL_NO_DES
+   { &key_LOCK_des_key_file, "LOCK_des_key_file", PSI_FLAG_GLOBAL},
++#endif /* !OPENSSL_NO_DES */
+ #endif /* HAVE_OPENSSL */
+ 
+   { &key_BINLOG_LOCK_index, "MYSQL_BIN_LOG::LOCK_index", 0},
+@@ -2242,7 +2248,9 @@
+   mysql_mutex_destroy(&LOCK_global_table_stats);
+   mysql_mutex_destroy(&LOCK_global_index_stats);
+ #ifdef HAVE_OPENSSL
++#ifndef OPENSSL_NO_DES
+   mysql_mutex_destroy(&LOCK_des_key_file);
++#endif /* ! OPENSSL_NO_DES */
+ #ifndef HAVE_YASSL
+   for (int i= 0; i < CRYPTO_num_locks(); ++i)
+     mysql_rwlock_destroy(&openssl_stdlocks[i].lock);
+@@ -4652,8 +4660,10 @@
+   mysql_cond_init(key_COND_slave_init, &COND_slave_init, NULL);
+ 
+ #ifdef HAVE_OPENSSL
++#ifndef OPENSSL_NO_DES
+   mysql_mutex_init(key_LOCK_des_key_file,
+                    &LOCK_des_key_file, MY_MUTEX_INIT_FAST);
++#endif
+ #ifndef HAVE_YASSL
+   openssl_stdlocks= (openssl_lock_t*) OPENSSL_malloc(CRYPTO_num_locks() *
+                                                      sizeof(openssl_lock_t));
+@@ -4800,8 +4810,10 @@
+   {
+     have_ssl= SHOW_OPTION_DISABLED;
+   }
++#ifndef OPENSSL_NO_DES
+   if (des_key_file)
+     load_des_key_file(des_key_file);
++#endif /* ! OPENSSL_NO_DES */
+ #endif /* HAVE_OPENSSL && ! EMBEDDED_LIBRARY */
+ }
+ 
+@@ -8834,7 +8846,9 @@
+   libwrapName= NullS;
+ #endif
+ #ifdef HAVE_OPENSSL
++#ifndef OPENSSL_NO_DES
+   des_key_file = 0;
++#endif /* ! OPENSSL_NO_DES */
+ #ifndef EMBEDDED_LIBRARY
+   ssl_acceptor_fd= 0;
+ #endif /* ! EMBEDDED_LIBRARY */
+diff -Nru mysql.old/sql/sql_reload.cc mysql/sql/sql_reload.cc
+--- mysql.old/sql/sql_reload.cc	2016-01-28 12:12:52.000000000 +0000
++++ mysql/sql/sql_reload.cc	2016-02-03 00:48:25.536614832 +0000
+@@ -353,6 +353,7 @@
+   }
+ #endif
+ #ifdef HAVE_OPENSSL
++#ifndef OPENSSL_NO_DES
+    if (options & REFRESH_DES_KEY_FILE)
+    {
+      if (des_key_file && load_des_key_file(des_key_file))
+@@ -362,6 +363,7 @@
+      }
+    }
+ #endif
++#endif
+ #ifdef HAVE_REPLICATION
+  if (options & REFRESH_SLAVE)
+  {
