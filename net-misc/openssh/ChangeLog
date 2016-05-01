@@ -2,6 +2,19 @@
 # Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/net-misc/openssh/ChangeLog,v 1.557 2015/03/25 21:06:03 vapier Exp $
 
+*openssh-7.2_p2 (01 May 2016)
+
+  01 May 2016; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/openssh-7.1_p2-x509-hpn14v10-glue.patch,
+  +files/openssh-7.2_p1-GSSAPI-dns.patch,
+  +files/openssh-7.2_p1-sctp-x509-glue.patch, +openssh-7.2_p2.ebuild,
+  -files/openssh-4.7_p1-GSSAPI-dns.patch,
+  -files/openssh-6.3_p1-x509-hpn14v2-glue.patch,
+  -files/openssh-6.9_p1-x509-warnings.patch,
+  -files/openssh-7.0_p1-sctp-x509-glue.patch, -openssh-7.1_p1-r2.ebuild,
+  metadata.xml:
+  net-misc/openssh: Update to 7.2p2.
+
 *openssh-7.1_p1-r2 (06 Jan 2016)
 
   06 Jan 2016; Andrew John Hughes <gnu_andrew@member.fsf.org>
