@@ -1,0 +1,165 @@
+diff -Nru qtbase-opensource-src-5.5.1.old/src/network/ssl/qsslkey_openssl.cpp qtbase-opensource-src-5.5.1/src/network/ssl/qsslkey_openssl.cpp
+--- qtbase-opensource-src-5.5.1.old/src/network/ssl/qsslkey_openssl.cpp	2015-10-13 05:35:28.000000000 +0100
++++ qtbase-opensource-src-5.5.1/src/network/ssl/qsslkey_openssl.cpp	2016-03-05 00:09:23.068482056 +0000
+@@ -199,8 +199,12 @@
+         } else {
+             if (!q_PEM_write_bio_RSAPrivateKey(
+                     bio, rsa,
++#ifdef OPENSSL_NO_DES
++                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_aes_256_cbc(),
++#else
+                     // ### the cipher should be selectable in the API:
+                     passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_des_ede3_cbc(),
++#endif
+                     const_cast<uchar *>((const uchar *)passPhrase.data()), passPhrase.size(), 0, 0)) {
+                 fail = true;
+             }
+@@ -213,7 +217,11 @@
+             if (!q_PEM_write_bio_DSAPrivateKey(
+                     bio, dsa,
+                     // ### the cipher should be selectable in the API:
++#ifdef OPENSSL_NO_DES
++                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_aes_256_cbc(),
++#else
+                     passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_des_ede3_cbc(),
++#endif
+                     const_cast<uchar *>((const uchar *)passPhrase.data()), passPhrase.size(), 0, 0)) {
+                 fail = true;
+             }
+@@ -235,7 +235,11 @@
+             if (!q_PEM_write_bio_ECPrivateKey(
+                     bio, ec,
+                     // ### the cipher should be selectable in the API:
++#ifdef OPENSSL_NO_DES
++                    passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_aes_256_cbc(),
++#else
+                     passPhrase.isEmpty() ? (const EVP_CIPHER *)0 : q_EVP_des_ede3_cbc(),
++#endif
+                     const_cast<uchar *>((const uchar *)passPhrase.data()), passPhrase.size(), 0, 0)) {
+                 fail = true;
+             }
+--- a/src/network/ssl/qsslsocket_openssl_symbols.cpp.orig	2016-04-25 19:40:04.977937696 +0100
++++ b/src/network/ssl/qsslsocket_openssl_symbols.cpp	2016-04-25 19:42:01.556097493 +0100
+@@ -166,8 +166,12 @@
+ DEFINEFUNC5(int, EVP_CipherInit, EVP_CIPHER_CTX *ctx, ctx, const EVP_CIPHER *type, type, const unsigned char *key, key, const unsigned char *iv, iv, int enc, enc, return 0, return);
+ DEFINEFUNC5(int, EVP_CipherUpdate, EVP_CIPHER_CTX *ctx, ctx, unsigned char *out, out, int *outl, outl, const unsigned char *in, in, int inl, inl, return 0, return);
+ DEFINEFUNC3(int, EVP_CipherFinal, EVP_CIPHER_CTX *ctx, ctx, unsigned char *out, out, int *outl, outl, return 0, return);
++#ifdef OPENSSL_NO_DES
++DEFINEFUNC(const EVP_CIPHER *, EVP_aes_256_cbc, DUMMYARG, DUMMYARG, return 0, return)
++#else
+ DEFINEFUNC(const EVP_CIPHER *, EVP_des_cbc, DUMMYARG, DUMMYARG, return 0, return)
+ DEFINEFUNC(const EVP_CIPHER *, EVP_des_ede3_cbc, DUMMYARG, DUMMYARG, return 0, return)
++#endif
+ DEFINEFUNC(const EVP_CIPHER *, EVP_rc2_cbc, DUMMYARG, DUMMYARG, return 0, return)
+ DEFINEFUNC3(int, EVP_PKEY_assign, EVP_PKEY *a, a, int b, b, char *c, c, return -1, return)
+ DEFINEFUNC2(int, EVP_PKEY_set1_RSA, EVP_PKEY *a, a, RSA *b, b, return -1, return)
+@@ -778,8 +782,12 @@
+     RESOLVEFUNC(EVP_CipherInit)
+     RESOLVEFUNC(EVP_CipherUpdate)
+     RESOLVEFUNC(EVP_CipherFinal)
++#ifdef OPENSSL_NO_DES
++    RESOLVEFUNC(EVP_aes_256_cbc)
++#else	
+     RESOLVEFUNC(EVP_des_cbc)
+     RESOLVEFUNC(EVP_des_ede3_cbc)
++#endif
+     RESOLVEFUNC(EVP_rc2_cbc)
+     RESOLVEFUNC(EVP_PKEY_assign)
+     RESOLVEFUNC(EVP_PKEY_set1_RSA)
+--- a/src/network/ssl/qsslsocket_openssl_symbols_p.h.orig	2016-04-25 19:40:04.977937696 +0100
++++ b/src/network/ssl/qsslsocket_openssl_symbols_p.h	2016-04-25 19:43:02.699128075 +0100
+@@ -242,8 +242,12 @@
+ int q_EVP_CipherInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type, const unsigned char *key, const unsigned char *iv, int enc);
+ int q_EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
+ int q_EVP_CipherFinal(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl);
++#ifdef OPENSSL_NO_DES
++const EVP_CIPHER *q_EVP_aes_256_cbc();
++#else
+ const EVP_CIPHER *q_EVP_des_cbc();
+ const EVP_CIPHER *q_EVP_des_ede3_cbc();
++#endif
+ const EVP_CIPHER *q_EVP_rc2_cbc();
+ int q_EVP_PKEY_assign(EVP_PKEY *a, int b, char *c);
+ Q_AUTOTEST_EXPORT int q_EVP_PKEY_set1_RSA(EVP_PKEY *a, RSA *b);
+--- a/src/network/ssl/qsslsocket_openssl_symbols.cpp.orig	2016-04-25 22:06:03.627015229 +0100
++++ b/src/network/ssl/qsslsocket_openssl_symbols.cpp	2016-04-25 22:08:26.876539886 +0100
+@@ -166,13 +166,16 @@
+ DEFINEFUNC5(int, EVP_CipherInit, EVP_CIPHER_CTX *ctx, ctx, const EVP_CIPHER *type, type, const unsigned char *key, key, const unsigned char *iv, iv, int enc, enc, return 0, return);
+ DEFINEFUNC5(int, EVP_CipherUpdate, EVP_CIPHER_CTX *ctx, ctx, unsigned char *out, out, int *outl, outl, const unsigned char *in, in, int inl, inl, return 0, return);
+ DEFINEFUNC3(int, EVP_CipherFinal, EVP_CIPHER_CTX *ctx, ctx, unsigned char *out, out, int *outl, outl, return 0, return);
+-#ifdef OPENSSL_NO_DES
++#ifndef OPENSSL_NO_AES
+ DEFINEFUNC(const EVP_CIPHER *, EVP_aes_256_cbc, DUMMYARG, DUMMYARG, return 0, return)
+-#else
++#endif
++#ifndef OPENSSL_NO_DES
+ DEFINEFUNC(const EVP_CIPHER *, EVP_des_cbc, DUMMYARG, DUMMYARG, return 0, return)
+ DEFINEFUNC(const EVP_CIPHER *, EVP_des_ede3_cbc, DUMMYARG, DUMMYARG, return 0, return)
+ #endif
++#ifndef OPENSSL_NO_RC2
+ DEFINEFUNC(const EVP_CIPHER *, EVP_rc2_cbc, DUMMYARG, DUMMYARG, return 0, return)
++#endif
+ DEFINEFUNC3(int, EVP_PKEY_assign, EVP_PKEY *a, a, int b, b, char *c, c, return -1, return)
+ DEFINEFUNC2(int, EVP_PKEY_set1_RSA, EVP_PKEY *a, a, RSA *b, b, return -1, return)
+ DEFINEFUNC2(int, EVP_PKEY_set1_DSA, EVP_PKEY *a, a, DSA *b, b, return -1, return)
+--- a/src/network/ssl/qsslkey_openssl.cpp.orig	2016-04-25 21:10:41.691432473 +0100
++++ b/src/network/ssl/qsslkey_openssl.cpp	2016-04-25 22:04:40.192458526 +0100
+@@ -285,14 +285,27 @@
+ 
+     switch (cipher) {
+     case QSslKeyPrivate::DesCbc:
++#ifndef OPENSSL_NO_DES
+         type = q_EVP_des_cbc();
++#endif
+         break;
+     case QSslKeyPrivate::DesEde3Cbc:
++#ifndef OPENSSL_NO_DES
+         type = q_EVP_des_ede3_cbc();
++#endif
+         break;
+     case QSslKeyPrivate::Rc2Cbc:
++#ifndef OPENSSL_NO_RC2
+         type = q_EVP_rc2_cbc();
++#endif
+         break;
++    case QSslKeyPrivate::Aes256Cbc:
++#ifndef OPENSSL_NO_AES
++        type = q_EVP_aes_256_cbc();
++#endif	
++        break;
++    default:
++	return NULL;
+     }
+ 
+     QByteArray output;
+--- a/src/network/ssl/qsslkey_p.h.orig	2016-03-03 11:35:22.000000000 +0000
++++ b/src/network/ssl/qsslkey_p.h	2016-04-25 21:57:01.120421445 +0100
+@@ -94,7 +94,8 @@
+     enum Cipher {
+         DesCbc,
+         DesEde3Cbc,
+-        Rc2Cbc
++        Rc2Cbc,
++	Aes256Cbc
+     };
+ 
+     Q_AUTOTEST_EXPORT static QByteArray decrypt(Cipher cipher, const QByteArray &data, const QByteArray &key, const QByteArray &iv);
+--- a/src/network/ssl/qsslsocket_openssl_symbols_p.h.orig	2016-04-25 21:10:41.691432473 +0100
++++ b/src/network/ssl/qsslsocket_openssl_symbols_p.h	2016-04-25 21:53:18.492297119 +0100
+@@ -242,13 +242,14 @@
+ int q_EVP_CipherInit(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type, const unsigned char *key, const unsigned char *iv, int enc);
+ int q_EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl, const unsigned char *in, int inl);
+ int q_EVP_CipherFinal(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl);
+-#ifdef OPENSSL_NO_DES
+ const EVP_CIPHER *q_EVP_aes_256_cbc();
+-#else
++#ifndef OPENSSL_NO_DES
+ const EVP_CIPHER *q_EVP_des_cbc();
+ const EVP_CIPHER *q_EVP_des_ede3_cbc();
+ #endif
++#ifndef OPENSSL_NO_RC2
+ const EVP_CIPHER *q_EVP_rc2_cbc();
++#endif
+ int q_EVP_PKEY_assign(EVP_PKEY *a, int b, char *c);
+ Q_AUTOTEST_EXPORT int q_EVP_PKEY_set1_RSA(EVP_PKEY *a, RSA *b);
+ int q_EVP_PKEY_set1_DSA(EVP_PKEY *a, DSA *b);
