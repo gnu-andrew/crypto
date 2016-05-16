@@ -1,0 +1,74 @@
+--- a/nse_openssl.cc.old	2016-05-08 18:50:25.204861223 +0100
++++ b/nse_openssl.cc	2016-05-08 19:20:19.547118948 +0100
+@@ -8,14 +8,18 @@
+ 
+ #include <openssl/bn.h>
+ #include <openssl/crypto.h>
++#ifndef OPENSSL_NO_DES
+ #include <openssl/des.h>
++#endif
+ #include <openssl/err.h>
+ #include <openssl/evp.h>
+ #include <openssl/hmac.h>
+ #include <openssl/md4.h>
+ #include <openssl/md5.h>
+ #include <openssl/rand.h>
++#ifndef OPENSSL_NO_RC4
+ #include <openssl/rc4.h>
++#endif
+ #include <openssl/ripemd.h>
+ #include <openssl/sha.h>
+ 
+@@ -488,6 +492,7 @@
+ 
+ static int l_DES_string_to_key(lua_State *L) /** DES_string_to_key( string data ) */
+ {
++#ifndef OPENSSL_NO_DES
+   size_t len;
+   const unsigned char *data = (unsigned char *) luaL_checklstring( L, 1, &len );
+   if (len != 7 )
+@@ -502,14 +507,22 @@
+ 
+   lua_pushlstring( L, (char *) key, 8 );
+   return 1;
++#else
++  return luaL_error( L, "DES not supported by OpenSSL." );
++#endif
+ }
+ 
+ static int l_rc4_options (lua_State *L)
+ {
++#ifndef OPENSSL_NO_RC4
+   lua_pushstring(L, RC4_options());
+   return 1;
++#else
++  return luaL_error( L, "RC4 not supported by OpenSSL." );
++#endif
+ }
+ 
++#ifndef OPENSSL_NO_RC4
+ static int l_rc4_encrypt (lua_State *L)
+ {
+   RC4_KEY *key = (RC4_KEY *) lua_touserdata(L, lua_upvalueindex(1));
+@@ -522,9 +535,11 @@
+ 
+   return 1;
+ }
++#endif
+ 
+ static int l_rc4 (lua_State *L)
+ {
++#ifndef OPENSSL_NO_RC4
+   size_t len;
+   const char *data = luaL_checklstring(L, 1, &len);
+ 
+@@ -534,6 +549,9 @@
+   lua_pushcclosure(L, l_rc4_encrypt, 1);
+ 
+   return 1;
++#else
++  return luaL_error( L, "RC4 not supported by OpenSSL." );
++#endif
+ }
+ 
+ static const struct luaL_Reg bignum_methods[] = {
