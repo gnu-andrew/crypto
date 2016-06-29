@@ -1,0 +1,38 @@
+--- lib/curl_setup.h.orig	2016-05-16 08:23:33.000000000 +0100
++++ lib/curl_setup.h	2016-06-29 01:12:09.054320510 +0100
+@@ -624,7 +624,7 @@
+ 
+ /* Single point where USE_NTLM definition might be defined */
+ #if !defined(CURL_DISABLE_NTLM) && !defined(CURL_DISABLE_CRYPTO_AUTH)
+-#if defined(USE_OPENSSL) || defined(USE_WINDOWS_SSPI) || \
++#if defined(HAVE_OPENSSL_DES) || defined(USE_WINDOWS_SSPI) || \
+     defined(USE_GNUTLS) || defined(USE_NSS) || defined(USE_DARWINSSL) || \
+     defined(USE_OS400CRYPTO) || defined(USE_WIN32_CRYPTO)
+ 
+--- configure.ac.old	2016-06-28 00:27:54.522968695 +0100
++++ configure.ac	2016-06-28 19:56:31.716075254 +0100
+@@ -1659,6 +1659,24 @@
+     ],[
+       AC_MSG_RESULT([no])
+     ])
++
++    AC_MSG_CHECKING([for DES support])
++    AC_COMPILE_IFELSE([
++      AC_LANG_PROGRAM([[
++#include <openssl/opensslconf.h>
++      ]],[[
++        #ifdef OPENSSL_NO_DES
++	#error "No DES support available in OpenSSL."
++	#endif
++      ]])
++    ],[
++      AC_MSG_RESULT([yes])
++      AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DES, 1,
++        [Define to 1 if OpenSSL includes DES support.])
++      curl_ssl_msg="enabled (OpenSSL DES support)"
++    ],[
++      AC_MSG_RESULT([no])
++    ])
+   fi
+ 
+   if test "$OPENSSL_ENABLED" = "1"; then
