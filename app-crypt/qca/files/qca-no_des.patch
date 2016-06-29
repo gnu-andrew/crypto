@@ -1,0 +1,75 @@
+--- a/plugins/qca-ossl/qca-ossl.cpp.orig	2016-06-22 02:32:35.732177532 +0100
++++ b/plugins/qca-ossl/qca-ossl.cpp	2016-06-22 02:33:10.927602859 +0100
+@@ -2969,11 +2969,13 @@
+ 		//	pbe = PBES2_TripleDES_SHA1;
+ 
+ 		const EVP_CIPHER *cipher = 0;
++#ifndef OPENSSL_NO_DES
+ 		if(pbe == PBES2_TripleDES_SHA1)
+ 			cipher = EVP_des_ede3_cbc();
+ 		else if(pbe == PBES2_DES_SHA1)
+ 			cipher = EVP_des_cbc();
+-
++#endif
++		
+ 		if(!cipher)
+ 			return SecureArray();
+ 
+@@ -2998,10 +3000,12 @@
+ 		//	pbe = PBES2_TripleDES_SHA1;
+ 
+ 		const EVP_CIPHER *cipher = 0;
++#ifndef OPENSSL_NO_DES
+ 		if(pbe == PBES2_TripleDES_SHA1)
+ 			cipher = EVP_des_ede3_cbc();
+ 		else if(pbe == PBES2_DES_SHA1)
+ 			cipher = EVP_des_cbc();
++#endif
+ 
+ 		if(!cipher)
+ 			return QString();
+@@ -6423,6 +6427,7 @@
+ 		}
+ 		else if(op == Encrypt)
+ 		{
++#ifndef OPENSSL_NO_DES
+ 			// TODO: support multiple recipients
+ 			Certificate target = to.first().x509CertificateChain().primary();
+ 
+@@ -6457,6 +6462,7 @@
+ 				PKCS7_free(p7);
+ 			}
+ 			else
++#endif
+ 			{
+ 				printf("bad\n");
+ 				return;
+@@ -6762,10 +6768,12 @@
+ 			   const InitializationVector &iv)
+ 	{
+ 		m_direction = dir;
++#ifndef OPENSSL_NO_DES
+ 		if ( ( m_cryptoAlgorithm == EVP_des_ede3() ) && (key.size() == 16) ) {
+ 			// this is really a two key version of triple DES.
+ 			m_cryptoAlgorithm = EVP_des_ede();
+ 		}
++#endif
+ 		if (Encode == m_direction) {
+ 			EVP_EncryptInit_ex(&m_context, m_cryptoAlgorithm, 0, 0, 0);
+ 			EVP_CIPHER_CTX_set_key_length(&m_context, key.size());
+@@ -7249,6 +7257,7 @@
+ 			return new opensslCipherContext( EVP_bf_cbc(), 0, this, type);
+ 		else if ( type == "blowfish-cbc-pkcs7" )
+ 			return new opensslCipherContext( EVP_bf_cbc(), 1, this, type);
++#ifndef OPENSSL_NO_DES
+ 		else if ( type == "tripledes-ecb" )
+ 			return new opensslCipherContext( EVP_des_ede3(), 0, this, type);
+ 		else if ( type == "tripledes-cbc" )
+@@ -7265,6 +7274,7 @@
+ 			return new opensslCipherContext( EVP_des_cfb(), 0, this, type);
+ 		else if ( type == "des-ofb" )
+ 			return new opensslCipherContext( EVP_des_ofb(), 0, this, type);
++#endif
+ 		else if ( type == "cast5-ecb" )
+ 			return new opensslCipherContext( EVP_cast5_ecb(), 0, this, type);
+ 		else if ( type == "cast5-cbc" )
