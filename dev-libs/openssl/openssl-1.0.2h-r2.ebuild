@@ -14,7 +14,7 @@ SRC_URI="mirror://openssl/source/${MY_P}.tar.gz"
 LICENSE="openssl"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="+asm bindist gmp kerberos rfc3779 sctp cpu_flags_x86_sse2 static-libs test +tls-heartbeat vanilla zlib"
+IUSE="+asm bindist +camellia +des gmp idea kerberos mdc2 rc2 +rc4 rc5 rfc3779 sctp cpu_flags_x86_sse2 sslv2 +sslv3 static-libs test +tls-heartbeat vanilla zlib"
 RESTRICT="!bindist? ( bindist )"
 
 RDEPEND=">=app-misc/c_rehash-1.7-r1
@@ -43,6 +43,10 @@ src_prepare() {
 	# Make sure we only ever touch Makefile.org and avoid patching a file
 	# that gets blown away anyways by the Configure script in src_configure
 	rm -f Makefile
+
+	# bugs 585142 and 585276
+	epatch "${FILESDIR}"/${P}-CVE-2016-2177.patch
+	epatch "${FILESDIR}"/${P}-CVE-2016-2178.patch
 
 	if ! use vanilla ; then
 		epatch "${FILESDIR}"/${PN}-1.0.0a-ldflags.patch #327421
@@ -138,19 +142,23 @@ multilib_src_configure() {
 	./${config} \
 		${sslout} \
 		$(use cpu_flags_x86_sse2 || echo "no-sse2") \
-		enable-camellia \
 		$(use_ssl !bindist ec) \
 		${ec_nistp_64_gcc_128} \
-		no-idea \
-		no-rc2 no-rc4 no-des no-ssl2 no-ssl3 \
-		enable-mdc2 \
-		enable-rc5 \
 		enable-tlsext \
 		$(use_ssl asm) \
+		$(use_ssl camellia) \
+		$(use_ssl des) \
 		$(use_ssl gmp gmp -lgmp) \
+		$(use_ssl idea) \
 		$(use_ssl kerberos krb5 --with-krb5-flavor=${krb5}) \
+		$(use_ssl mdc2) \
+		$(use_ssl rc2) \
+		$(use_ssl rc4) \
+		$(use_ssl rc5) \
 		$(use_ssl rfc3779) \
 		$(use_ssl sctp) \
+		$(use_ssl sslv2 ssl2) \
+		$(use_ssl sslv3 ssl3) \
 		$(use_ssl tls-heartbeat heartbeats) \
 		$(use_ssl zlib) \
 		--prefix="${EPREFIX}"/usr \
@@ -242,16 +250,8 @@ multilib_src_install_all() {
 	keepdir ${SSL_CNF_DIR}/private
 }
 
-pkg_preinst() {
-	has_version ${CATEGORY}/${PN}:0.9.8 && return 0
-	preserve_old_lib /usr/$(get_libdir)/lib{crypto,ssl}.so.0.9.8
-}
-
 pkg_postinst() {
 	ebegin "Running 'c_rehash ${EROOT%/}${SSL_CNF_DIR}/certs/' to rebuild hashes #333069"
 	c_rehash "${EROOT%/}${SSL_CNF_DIR}/certs" >/dev/null
 	eend $?
-
-	has_version ${CATEGORY}/${PN}:0.9.8 && return 0
-	preserve_old_lib_notify /usr/$(get_libdir)/lib{crypto,ssl}.so.0.9.8
 }

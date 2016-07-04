@@ -8,8 +8,17 @@
 <use>
  <flag name="asm">Support assembly hand optimized crypto functions (i.e. faster run time)</flag>
  <flag name="bindist">Disable EC algorithms (as they seem to be patented) -- note: changes the ABI</flag>
- <flag name="sctp">Support for Stream Control Transmission Protocol</flag>
+ <flag name="camellia">Support for the symmetric key block cipher Camellia (same class as AES)</flag>
+ <flag name="des">Support for the old/insecure DES cipher -- many apps still depend on this for 3DES</flag>
+ <flag name="idea">Support for the old/insecure IDEA cipher</flag>
+ <flag name="mdc2">Support for the MDC2 cipher -- not widely used</flag>
+ <flag name="rc2">Support for the old/insecure RC2 cipher</flag>
+ <flag name="rc4">Support for the old/insecure RC2 cipher -- some apps still depend on this</flag>
+ <flag name="rc5">Support for the old/insecure RC2 cipher</flag>
  <flag name="rfc3779">Enable support for RFC 3779 (X.509 Extensions for IP Addresses and AS Identifiers)</flag>
+ <flag name="sctp">Support for Stream Control Transmission Protocol</flag>
+ <flag name="sslv2">Support for the old/insecure SSLv2 protocol -- note: not required for TLS/https</flag>
+ <flag name="sslv3">Support for the old/insecure SSLv3 protocol -- note: not required for TLS/https</flag>
  <flag name="tls-heartbeat">Enable the Heartbeat Extension in TLS and DTLS</flag>
 </use>
 <upstream>
