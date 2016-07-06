@@ -12,6 +12,7 @@
  <flag name="des">Support for the old/insecure DES cipher -- many apps still depend on this for 3DES</flag>
  <flag name="idea">Support for the old/insecure IDEA cipher</flag>
  <flag name="mdc2">Support for the MDC2 cipher -- not widely used</flag>
+ <flag name="privacy">Enable hardened default cipher and protocol settings</flag>
  <flag name="rc2">Support for the old/insecure RC2 cipher</flag>
  <flag name="rc4">Support for the old/insecure RC2 cipher -- some apps still depend on this</flag>
  <flag name="rc5">Support for the old/insecure RC2 cipher</flag>
@@ -27,5 +28,8 @@
 <slots>
  <slot name="0">For building against. This is the only slot
   that provides headers and command line tools.</slot>
+ <slot name="0.9.8">For binary compatibility, provides libcrypto.so.0.9.8
+  and libssl.so.0.9.8 only.</slot>
+ <subslots>Reflect ABI of libcrypto.so and libssl.so.</subslots>
 </slots>
 </pkgmetadata>

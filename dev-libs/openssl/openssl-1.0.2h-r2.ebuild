@@ -14,7 +14,7 @@ SRC_URI="mirror://openssl/source/${MY_P}.tar.gz"
 LICENSE="openssl"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="+asm bindist +camellia +des gmp idea kerberos mdc2 rc2 +rc4 rc5 rfc3779 sctp cpu_flags_x86_sse2 sslv2 +sslv3 static-libs test +tls-heartbeat vanilla zlib"
+IUSE="+asm bindist +camellia +des gmp idea kerberos mdc2 +privacy rc2 +rc4 rc5 rfc3779 sctp cpu_flags_x86_sse2 sslv2 +sslv3 static-libs test +tls-heartbeat vanilla zlib"
 RESTRICT="!bindist? ( bindist )"
 
 RDEPEND=">=app-misc/c_rehash-1.7-r1
@@ -82,6 +82,10 @@ src_prepare() {
 	# the conditional as always-on
 	# helps clang (#417795), and versioned gcc (#499818)
 	sed -i 's/expr.*MAKEDEPEND.*;/true;/' util/domd || die
+
+	# set DEFAULT_CIPHER_LIST to a hardened default value
+	use privacy && ( sed -i 's/^\(# define SSL_DEFAULT_CIPHER_LIST \).*/\1"ALL:!aNULL:!eNULL:!SSLv2:!EXPORT:!LOW:!MEDIUM:!RC4:!3DES:!DSS"/' ssl/ssl.h || die )
+	use privacy && ( sed -i 's/^\(# define SSL_DEFAULT_CIPHER_LIST \).*/\1"EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EDH+SHA256:EECDH+ECDSA:EECDH+aRSA:EDH+aRSA:ALL:!aNULL:!eNULL:!EXPORT:!LOW:!MEDIUM:!RC4:!3DES:!PSK:!SRP:!DSS"/' ssl/ssl.h || die )
 
 	# quiet out unknown driver argument warnings since openssl
 	# doesn't have well-split CFLAGS and we're making it even worse
