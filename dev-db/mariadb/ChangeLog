@@ -2,6 +2,14 @@
 # Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
 # (auto-generated from git log)
 
+*mariadb-10.1.14 (08 Jul 2016)
+
+  08 Jul 2016; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +mariadb-10.1.14.ebuild, -files/mariadb-heimdal.patch,
+  -mariadb-10.1.11.ebuild:
+  dev-db/mariadb: Update to 10.1.14. Drop heimdal patch which is now fixed
+  upstream.
+
 *mariadb-10.0.21-r1 (09 Aug 2015)
 *mariadb-10.0.21 (09 Aug 2015)
 *mariadb-10.0.20-r1 (09 Aug 2015)
@@ -347,4 +355,3 @@
 
   Package-Manager: portage-2.2.27
   RepoMan-Options: --ignore-arches
-
