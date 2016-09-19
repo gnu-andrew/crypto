@@ -2,6 +2,14 @@
 # Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/net-libs/rb_libtorrent/ChangeLog,v 1.199 2015/06/09 12:42:11 mrueg Exp $
 
+*rb_libtorrent-1.0.9-r2 (19 Sep 2016)
+
+  19 Sep 2016; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/rb_libtorrent-1.0.9-CVE-2016-5301.patch,
+  +files/rb_libtorrent-1.0.9-test_torrent_parse.patch,
+  +rb_libtorrent-1.0.9-r2.ebuild, -rb_libtorrent-1.0.9.ebuild, metadata.xml:
+  net-libs/rb_libtorrent: Update to 1.0.9-r2.
+
 *rb_libtorrent-1.0.9 (31 Mar 2016)
 
   31 Mar 2016; Andrew John Hughes <gnu_andrew@member.fsf.org>
