@@ -12,3 +12,21 @@
      else if (keylen <= 16)
          kekcipher = EVP_aes_128_wrap();
      else if (keylen <= 24)
+--- openssl-1.0.2/ssl/kssl.c.orig	2016-09-26 10:49:07.000000000 +0100
++++ openssl-1.0.2/ssl/kssl.c	2016-11-16 06:49:25.884898217 +0000
+@@ -776,6 +776,7 @@
+ const EVP_CIPHER *kssl_map_enc(krb5_enctype enctype)
+ {
+     switch (enctype) {
++#ifndef OPENSSL_NO_DES
+     case ENCTYPE_DES_HMAC_SHA1: /* EVP_des_cbc(); */
+     case ENCTYPE_DES_CBC_CRC:
+     case ENCTYPE_DES_CBC_MD4:
+@@ -788,6 +789,7 @@
+     case ENCTYPE_DES3_CBC_RAW:
+         return EVP_des_ede3_cbc();
+         break;
++#endif
+     default:
+         return NULL;
+         break;
