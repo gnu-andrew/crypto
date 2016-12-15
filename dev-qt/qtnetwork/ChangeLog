@@ -2,6 +2,12 @@
 # Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/dev-qt/qtnetwork/ChangeLog,v 1.15 2015/04/25 18:24:48 kensington Exp $
 
+*qtnetwork-5.6.2 (15 Dec 2016)
+
+  15 Dec 2016; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +qtnetwork-5.6.2.ebuild, -qtnetwork-5.6.1.ebuild:
+  dev-qt/qtnetwork: Update to 5.6.2.
+
 *qtnetwork-5.6.1 (04 Jul 2016)
 
   04 Jul 2016; Andrew John Hughes <gnu_andrew@member.fsf.org>
