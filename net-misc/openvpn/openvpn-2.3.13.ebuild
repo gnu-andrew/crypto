@@ -1,10 +1,10 @@
-# Copyright 1999-2015 Gentoo Foundation
+# Copyright 1999-2016 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/net-misc/openvpn/openvpn-2.3.6-r2.ebuild,v 1.1 2015/02/17 18:46:07 djc Exp $
+# $Id$
 
-EAPI=4
+EAPI=5
 
-inherit multilib autotools flag-o-matic user systemd
+inherit multilib flag-o-matic user systemd linux-info
 
 DESCRIPTION="Robust and highly flexible tunneling application compatible with many OSes"
 SRC_URI="http://swupdate.openvpn.net/community/releases/${P}.tar.gz"
@@ -13,10 +13,10 @@ HOMEPAGE="http://openvpn.net/"
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~alpha ~amd64 ~arm ~hppa ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86 ~sparc-fbsd ~x86-fbsd ~x86-freebsd ~amd64-linux ~arm-linux ~x86-linux"
-IUSE="examples down-root iproute2 pam passwordsave pkcs11 +plugins +polarssl selinux +ssl systemd +lzo static userland_BSD"
+IUSE="examples down-root iproute2 libressl +lzo pam pkcs11 +plugins polarssl selinux socks +ssl static systemd userland_BSD"
 
 REQUIRED_USE="static? ( !plugins !pkcs11 )
-			polarssl? ( ssl )
+			polarssl? ( ssl !libressl )
 			pkcs11? ( ssl )
 			!plugins? ( !pam !down-root )"
 
@@ -26,41 +26,44 @@ DEPEND="
 	)
 	pam? ( virtual/pam )
 	ssl? (
-		!polarssl? ( >=dev-libs/openssl-0.9.7 ) polarssl? ( >=net-libs/polarssl-1.2.10 )
+		!polarssl? (
+			!libressl? ( >=dev-libs/openssl-0.9.7:* )
+			libressl? ( dev-libs/libressl )
+		)
+		polarssl? ( >=net-libs/polarssl-1.3.8 )
 	)
 	lzo? ( >=dev-libs/lzo-1.07 )
-	pkcs11? ( >=dev-libs/pkcs11-helper-1.11 )"
+	pkcs11? ( >=dev-libs/pkcs11-helper-1.11 )
+	systemd? ( sys-apps/systemd )"
 RDEPEND="${DEPEND}
 	selinux? ( sec-policy/selinux-openvpn )
 "
 
+CONFIG_CHECK="~TUN"
+
+pkg_setup()  {
+	linux-info_pkg_setup
+}
+
 src_prepare() {
-	# Set correct pass to systemd-ask-password binary
-	sed -i "s:\(/bin/systemd-ask-password\):/usr\1:" ./src/openvpn/console.c || die
-	epatch "${FILESDIR}/2.3.6-null-cipher.patch" || die
-	epatch "${FILESDIR}/2.3.6-disable-compression.patch" || die
-	epatch "${FILESDIR}/2.3.6-no_des.patch" || die
-	eautoreconf
+	epatch "${FILESDIR}/${PV}-no_des.patch" || die
 }
 
 src_configure() {
 	use static && LDFLAGS="${LDFLAGS} -Xcompiler -static"
 	local myconf
-	echo "DROPPY"
-	use polarssl && echo "FLOZZY"
 	use polarssl && myconf="--with-crypto-library=polarssl"
 	econf \
 		${myconf} \
 		--docdir="${EPREFIX}/usr/share/doc/${PF}" \
 		--with-plugindir="${ROOT}/usr/$(get_libdir)/$PN" \
-		--disable-http-proxy \
-		$(use_enable passwordsave password-save) \
 		$(use_enable ssl) \
 		$(use_enable ssl crypto) \
 		$(use_enable lzo) \
 		$(use_enable pkcs11) \
 		$(use_enable plugins) \
 		$(use_enable iproute2) \
+		$(use_enable socks) \
 		$(use_enable pam plugin-auth-pam) \
 		$(use_enable down-root plugin-down-root) \
 		$(use_enable systemd)
@@ -90,7 +93,8 @@ src_install() {
 	fi
 
 	systemd_newtmpfilesd "${FILESDIR}"/${PN}.tmpfile ${PN}.conf
-	systemd_newunit "${FILESDIR}"/${PN}.service 'openvpn@.service'
+	systemd_newunit distro/systemd/openvpn-client@.service openvpn-client@.service
+	systemd_newunit distro/systemd/openvpn-server@.service openvpn-server@.service
 }
 
 pkg_postinst() {
