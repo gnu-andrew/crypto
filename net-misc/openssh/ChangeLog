@@ -1,6 +1,14 @@
 # ChangeLog for net-misc/openssh
-# Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2017 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/net-misc/openssh/ChangeLog,v 1.557 2015/03/25 21:06:03 vapier Exp $
+
+*openssh-7.4_p1 (24 Jan 2017)
+
+  24 Jan 2017; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/openssh-7.4_p1-GSSAPI-dns.patch, +files/openssh-7.4_p1-no_3des.patch,
+  +files/openssh-7.4_p1-test-bashism.patch, +openssh-7.4_p1.ebuild,
+  -files/openssh-7.3_p1-no_3des.patch, -openssh-7.3_p1-r4.ebuild:
+  net-misc/openssh: Update to 7.4_p1.
 
 *openssh-7.3_p1-r4 (20 Sep 2016)
 
