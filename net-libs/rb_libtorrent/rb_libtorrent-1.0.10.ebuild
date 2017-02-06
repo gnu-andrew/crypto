@@ -1,4 +1,4 @@
-# Copyright 1999-2016 Gentoo Foundation
+# Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Id$
 
@@ -20,7 +20,7 @@ SRC_URI="https://github.com/arvidn/libtorrent/releases/download/libtorrent-${MY_
 
 LICENSE="BSD"
 SLOT="0/8"
-KEYWORDS="~amd64 ~arm ~ppc ~ppc64 ~sparc ~x86 ~x86-fbsd"
+KEYWORDS="~amd64"
 IUSE="debug +dht doc examples +geoip libressl python +ssl static-libs test"
 
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
@@ -47,7 +47,6 @@ S=${WORKDIR}/${MY_P}
 
 PATCHES=(
 	"${FILESDIR}/no_rc4.patch"
-	"${FILESDIR}/${PN}-1.0.9-CVE-2016-5301.patch"
 	"${FILESDIR}/${PN}-1.0.9-test_torrent_parse.patch"
 )
 
