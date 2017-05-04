@@ -1,6 +1,13 @@
-# ChangeLog for net-misc/openvpn
+# ChangeLog for net-vpn/openvpn
 # Copyright 1999-2017 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/net-misc/openvpn/ChangeLog,v 1.317 2014/12/28 11:33:39 djc Exp $
+
+*openvpn-2.4.1 (04 May 2017)
+
+  04 May 2017; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +openvpn-2.4.1.ebuild, -files/openvpn-2.4.0-fix-libressl.patch,
+  -openvpn-2.4.0-r1.ebuild:
+  net-vpn/openvpn: Update to 2.4.1.
 
 *openvpn-2.3.13 (18 Dec 2016)
 

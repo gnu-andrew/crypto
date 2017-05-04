@@ -18,8 +18,6 @@ IUSE="down-root examples inotify iproute2 libressl lz4 +lzo mbedtls pam"
 IUSE+=" pkcs11 +plugins polarssl selinux +ssl static systemd test userland_BSD"
 
 REQUIRED_USE="static? ( !plugins !pkcs11 )
-	lzo? ( !lz4 )
-	pkcs11? ( ssl )
 	mbedtls? ( ssl !libressl )
 	pkcs11? ( ssl )
 	!plugins? ( !pam !down-root )
@@ -51,7 +49,6 @@ CONFIG_CHECK="~TUN"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-external-cmocka.patch"
-	"${FILESDIR}/${PN}-2.4.0-fix-libressl.patch"
 	"${FILESDIR}/${PN}-no_des.patch"
 )
 
@@ -71,7 +68,6 @@ src_prepare() {
 src_configure() {
 	use static && append-ldflags -Xcompiler -static
 	econf \
-		--with-plugindir="${ROOT}/usr/$(get_libdir)/$PN" \
 		$(usex mbedtls '--with-crypto-library=mbedtls' '') \
 		$(use_enable inotify async-push) \
 		$(use_enable ssl crypto) \
@@ -117,8 +113,8 @@ src_install() {
 	fi
 
 	systemd_newtmpfilesd "${FILESDIR}"/${PN}.tmpfile ${PN}.conf
-	systemd_newunit distro/systemd/openvpn-client@.service openvpn-client@.service
-	systemd_newunit distro/systemd/openvpn-server@.service openvpn-server@.service
+	use systemd && systemd_newunit distro/systemd/openvpn-client@.service openvpn-client@.service
+	use systemd && systemd_newunit distro/systemd/openvpn-server@.service openvpn-server@.service
 }
 
 pkg_postinst() {
@@ -157,6 +153,6 @@ pkg_postinst() {
 
 	if use plugins ; then
 		einfo ""
-		einfo "plugins have been installed into /usr/$(get_libdir)/${PN}"
+		einfo "plugins have been installed into /usr/$(get_libdir)/${PN}/plugins"
 	fi
 }
