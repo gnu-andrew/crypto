@@ -17,7 +17,7 @@ Description=PostgreSQL database server
 After=network.target
 
 [Service]
-Type=forking
+Type=notify
 
 User=postgres
 Group=postgres
@@ -37,9 +37,10 @@ Environment=DATA_DIR=/var/lib/postgresql/@SLOT@/data
 # StandardOutput=syslog
 
 ExecStartPre=/usr/bin/postgresql-@SLOT@-check-db-dir
-ExecStart=/usr/@LIBDIR@/postgresql-@SLOT@/bin/pg_ctl start -D ${DATA_DIR} -s -l ${DATA_DIR}/postmaster.log -o "-p ${PGPORT} -D ${PGDATA} --data-directory=${DATA_DIR}" -w -t 300
-ExecStop=/usr/@LIBDIR@/postgresql-@SLOT@/bin/pg_ctl stop -D ${DATA_DIR} -s -m fast
-ExecReload=/usr/@LIBDIR@/postgresql-@SLOT@/bin/pg_ctl reload -D ${DATA_DIR} -s
+ExecStart=/usr/@LIBDIR@/postgresql-@SLOT@/bin/postgres -p ${PGPORT} -D ${DATA_DIR}
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGINT
 
 # Give a reasonable amount of time for the server to start up/shut down
 TimeoutSec=300
