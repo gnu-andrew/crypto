@@ -28,7 +28,7 @@ CDEPEND="
 	keyutils? ( >=sys-apps/keyutils-1.5.8[${MULTILIB_USEDEP}] )
 	openldap? ( >=net-nds/openldap-2.4.38-r1[${MULTILIB_USEDEP}] )
 	pkinit? (
-		!libressl? ( >=dev-libs/openssl-1.0.1h-r2:0[des,${MULTILIB_USEDEP}] )
+		!libressl? ( >=dev-libs/openssl-1.0.1h-r2:0[${MULTILIB_USEDEP}] )
 		libressl? ( dev-libs/libressl[${MULTILIB_USEDEP}] )
 	)
 	xinetd? ( sys-apps/xinetd )
@@ -59,6 +59,10 @@ src_prepare() {
 	eapply -p2 "${FILESDIR}/${PN}-config_LDFLAGS.patch"
 	eapply -p0 "${FILESDIR}/${PN}-1.14.2-redeclared-ttyname.patch"
 	eapply "${FILESDIR}/${PN}-1.14.4-disable-nls.patch"
+
+	if has_version ">=dev-libs/openssl-1.1.0" ; then
+		eapply -p2 "${FILESDIR}/${PN}-ssl11.patch"
+	fi
 
 	# Make sure we always use the system copies.
 	rm -rf util/{et,ss,verto}

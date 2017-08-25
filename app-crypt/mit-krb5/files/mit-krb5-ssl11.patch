@@ -1,0 +1,16 @@
+--- ./src/plugins/tls/k5tls/openssl.c.old	2017-08-22 17:50:55.687986867 +0100
++++ ./src/plugins/tls/k5tls/openssl.c	2017-08-24 18:53:38.139666182 +0100
+@@ -51,9 +51,10 @@
+ int
+ init_openssl()
+ {
+-    SSL_library_init();
+-    SSL_load_error_strings();
+-    OpenSSL_add_all_algorithms();
++    OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS |
++                     OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
++                     OPENSSL_INIT_ADD_ALL_CIPHERS |
++                     OPENSSL_INIT_ADD_ALL_DIGESTS, NULL);
+     ex_context_id = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+     ex_handle_id = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+     return 0;
