@@ -1,0 +1,61 @@
+--- ./host2str.c.old	2017-08-25 14:25:00.673671588 +0100
++++ ./host2str.c	2017-08-25 14:26:45.339985287 +0100
+@@ -28,6 +28,12 @@
+ #include <time.h>
+ #include <sys/time.h>
+ 
++#ifdef HAVE_SSL
++#include <openssl/bn.h>
++#include <openssl/dsa.h>
++#include <openssl/rsa.h>
++#endif
++
+ #ifndef INET_ADDRSTRLEN
+ #define INET_ADDRSTRLEN 16
+ #endif
+--- ./dnssec_verify.c.old	2016-12-20 10:48:22.000000000 +0000
++++ ./dnssec_verify.c	2017-08-25 14:25:00.673671588 +0100
+@@ -594,7 +594,6 @@
+ 						if (tree->parent_status[i]
+ 						    == LDNS_STATUS_SSL_ERR) {
+ 							printf("; SSL Error: ");
+-							ERR_load_crypto_strings();
+ 							ERR_print_errors_fp(stdout);
+ 							printf("\n");
+ 						}
+--- ./dnssec_sign.c.old	2016-12-20 10:48:22.000000000 +0000
++++ ./dnssec_sign.c	2017-08-25 14:25:00.673671588 +0100
+@@ -17,6 +17,9 @@
+ #include <openssl/rand.h>
+ #include <openssl/err.h>
+ #include <openssl/md5.h>
++#include <openssl/bn.h>
++#include <openssl/dsa.h>
++#include <openssl/rsa.h>
+ #endif /* HAVE_SSL */
+ 
+ ldns_rr *
+--- ./dnssec.c.old	2016-12-20 10:48:22.000000000 +0000
++++ ./dnssec.c	2017-08-25 14:25:00.673671588 +0100
+@@ -23,6 +23,8 @@
+ #include <openssl/rand.h>
+ #include <openssl/err.h>
+ #include <openssl/md5.h>
++#include <openssl/dsa.h>
++#include <openssl/rsa.h>
+ #endif
+ 
+ ldns_rr *
+--- ./keys.c.old	2016-12-20 10:48:22.000000000 +0000
++++ ./keys.c	2017-08-25 14:25:00.673671588 +0100
+@@ -18,6 +18,10 @@
+ #include <openssl/ssl.h>
+ #include <openssl/engine.h>
+ #include <openssl/rand.h>
++#include <openssl/bn.h>
++#include <openssl/dsa.h>
++#include <openssl/rsa.h>
++#include <openssl/ui.h>
+ #endif /* HAVE_SSL */
+ 
+ ldns_lookup_table ldns_signing_algorithms[] = {
