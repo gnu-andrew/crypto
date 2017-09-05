@@ -1,0 +1,89 @@
+--- entropy.c.old	2017-03-20 02:39:27.000000000 +0000
++++ entropy.c	2017-09-05 01:13:20.883346928 +0100
+@@ -213,9 +213,9 @@
+ #ifndef OPENSSL_PRNG_ONLY
+ 	unsigned char buf[RANDOM_SEED_SIZE];
+ #endif
+-	if (!ssh_compatible_openssl(OPENSSL_VERSION_NUMBER, SSLeay()))
++	if (!ssh_compatible_openssl(OPENSSL_VERSION_NUMBER, OpenSSL_version_num()))
+ 		fatal("OpenSSL version mismatch. Built against %lx, you "
+-		    "have %lx", (u_long)OPENSSL_VERSION_NUMBER, SSLeay());
++		    "have %lx", (u_long)OPENSSL_VERSION_NUMBER, OpenSSL_version_num());
+ 
+ #ifndef OPENSSL_PRNG_ONLY
+ 	if (RAND_status() == 1) {
+--- ssh.c.old	2017-09-04 19:47:29.583888870 +0100
++++ ssh.c	2017-09-05 01:17:21.919485207 +0100
+@@ -768,7 +768,7 @@
+ 			fprintf(stderr, "%s, %s\n",
+ 			    SSH_RELEASE,
+ #ifdef WITH_OPENSSL
+-			    SSLeay_version(SSLEAY_VERSION)
++			    OpenSSL_version(OPENSSL_VERSION)
+ #else
+ 			    "without OpenSSL"
+ #endif
+@@ -980,9 +980,9 @@
+ #ifdef WITH_OPENSSL
+ #if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 	OpenSSL_add_all_algorithms();
+-#endif
+ 	ERR_load_crypto_strings();
+ #endif
++#endif
+ 
+ 	/* Initialize the command to execute on remote host. */
+ 	buffer_init(&command);
+@@ -1029,7 +1029,7 @@
+ 	if (debug_flag)
+ 		logit("%s, %s", SSH_RELEASE,
+ #ifdef WITH_OPENSSL
+-		    SSLeay_version(SSLEAY_VERSION)
++		    OpenSSL_version(OPENSSL_VERSION)
+ #else
+ 		    "without OpenSSL"
+ #endif
+--- sshd.c.old	2017-09-04 19:47:28.423907495 +0100
++++ sshd.c	2017-09-05 01:18:01.422852354 +0100
+@@ -907,7 +907,7 @@
+ 	fprintf(stderr, "%s, %s\n",
+ 	    SSH_RELEASE,
+ #ifdef WITH_OPENSSL
+-	    SSLeay_version(SSLEAY_VERSION)
++	    OpenSSL_version(OPENSSL_VERSION)
+ #else
+ 	    "without OpenSSL"
+ #endif
+@@ -1778,7 +1778,7 @@
+ 
+ 	debug("sshd version %s, %s", SSH_VERSION,
+ #ifdef WITH_OPENSSL
+-	    SSLeay_version(SSLEAY_VERSION)
++	    OpenSSL_version(OPENSSL_VERSION)
+ #else
+ 	    "without OpenSSL"
+ #endif
+--- ssh-keysign.c.old	2017-03-20 02:39:27.000000000 +0000
++++ ssh-keysign.c	2017-09-05 01:21:39.003366884 +0100
+@@ -229,7 +229,9 @@
+ 		fatal("could not open any host key");
+ 
+ #ifdef WITH_OPENSSL
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 	OpenSSL_add_all_algorithms();
++#endif
+ 	arc4random_buf(rnd, sizeof(rnd));
+ 	RAND_seed(rnd, sizeof(rnd));
+ #endif
+--- ssh_api.c.old	2017-03-20 02:39:27.000000000 +0000
++++ ssh_api.c	2017-09-05 01:22:45.938300308 +0100
+@@ -80,7 +80,9 @@
+ 
+ 	if (!called) {
+ #ifdef WITH_OPENSSL
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 		OpenSSL_add_all_algorithms();
++#endif
+ #endif /* WITH_OPENSSL */
+ 		called = 1;
+ 	}

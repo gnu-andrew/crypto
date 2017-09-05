@@ -2,6 +2,22 @@
 # Copyright 1999-2017 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/net-misc/openssh/ChangeLog,v 1.557 2015/03/25 21:06:03 vapier Exp $
 
+*openssh-7.5_p1-r2 (05 Sep 2017)
+
+  05 Sep 2017; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/openssh-7.5_p1-GSSAPI-dns.patch,
+  +files/openssh-7.5_p1-cross-cache.patch,
+  +files/openssh-7.5_p1-hpn-x509-10.2-glue.patch,
+  +files/openssh-7.5_p1-openssl-1.1.0.patch,
+  +files/openssh-7.5_p1-x32-typo.patch,
+  +files/openssh-openssl-1.1.0-configure.patch,
+  +files/openssh-openssl-1.1.0-hpn.patch,
+  +files/openssh-openssl-1.1.0-versioning.patch, +openssh-7.5_p1-r2.ebuild,
+  -files/openssh-7.4_p1-GSSAPI-dns.patch,
+  -files/openssh-7.4_p1-test-bashism.patch, -openssh-7.4_p1.ebuild:
+  net-misc/openssh: Update to 7.5_p1-r2 and fix to work with OpenSSL 1.1.0 using
+  patch from Fedora.
+
 *openssh-7.4_p1 (24 Jan 2017)
 
   24 Jan 2017; Andrew John Hughes <gnu_andrew@member.fsf.org>

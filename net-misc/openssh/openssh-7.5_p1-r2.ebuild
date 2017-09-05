@@ -9,10 +9,10 @@ inherit eutils user flag-o-matic multilib autotools pam systemd versionator
 # and _p? releases.
 PARCH=${P/_}
 
-#HPN_PATCH= #"${PARCH}-hpnssh14v12.tar.xz"
+HPN_PATCH="${PARCH}-hpnssh14v12.tar.xz"
 SCTP_PATCH="${PN}-7.4_p1-sctp.patch.xz"
-LDAP_PATCH="${PN}-lpk-7.4p1-0.3.14.patch.xz"
-X509_VER="9.3" X509_PATCH="${PN}-${PV/_}+x509-${X509_VER}.diff.gz"
+LDAP_PATCH="${PN}-lpk-7.5p1-0.3.14.patch.xz"
+X509_VER="10.2" X509_PATCH="${PN}-${PV/_}+x509-${X509_VER}.diff.gz"
 
 DESCRIPTION="Port of OpenBSD's free SSH release"
 HOMEPAGE="http://www.openssh.org/"
@@ -25,34 +25,35 @@ SRC_URI="mirror://openbsd/OpenSSH/portable/${PARCH}.tar.gz
 
 LICENSE="BSD GPL-2"
 SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~m68k ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86 ~ppc-aix ~amd64-fbsd ~sparc-fbsd ~x86-fbsd ~x64-freebsd ~x86-freebsd ~hppa-hpux ~ia64-hpux ~x86-interix ~amd64-linux ~arm-linux ~ia64-linux ~x86-linux ~ppc-macos ~x64-macos ~x86-macos ~m68k-mint ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris"
+KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~m68k ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86 ~ppc-aix ~x64-cygwin ~amd64-fbsd ~sparc-fbsd ~x86-fbsd ~amd64-linux ~arm-linux ~x86-linux ~ppc-macos ~x64-macos ~x86-macos ~m68k-mint ~sparc-solaris ~sparc64-solaris ~x64-solaris ~x86-solaris"
 # Probably want to drop ssl defaulting to on in a future version.
-IUSE="abi_mips_n32 bindist debug ${HPN_PATCH:++}hpn kerberos kernel_linux ldap ldns libedit libressl livecd pam +pie sctp selinux skey ssh1 +ssl static test X X509"
+IUSE="abi_mips_n32 audit bindist debug ${HPN_PATCH:++}hpn kerberos kernel_linux ldap ldns libedit libressl livecd pam +pie sctp selinux skey ssh1 +ssl static test X X509"
 REQUIRED_USE="ldns? ( ssl )
 	pie? ( !static )
 	ssh1? ( ssl )
 	static? ( !kerberos !pam )
-	X509? ( !hpn !ldap !sctp ssl )
+	X509? ( !ldap !sctp ssl )
 	test? ( ssl )"
 
 LIB_DEPEND="
+	audit? ( sys-process/audit[static-libs(+)] )
 	ldns? (
 		net-libs/ldns[static-libs(+)]
 		!bindist? ( net-libs/ldns[ecdsa,ssl] )
 		bindist? ( net-libs/ldns[-ecdsa,ssl] )
 	)
-	libedit? ( dev-libs/libedit[static-libs(+)] )
+	libedit? ( dev-libs/libedit:=[static-libs(+)] )
 	sctp? ( net-misc/lksctp-tools[static-libs(+)] )
 	selinux? ( >=sys-libs/libselinux-1.28[static-libs(+)] )
 	skey? ( >=sys-auth/skey-1.1.5-r1[static-libs(+)] )
 	ssl? (
 		!libressl? (
-			>=dev-libs/openssl-0.9.8f:0[bindist=]
-			dev-libs/openssl:0[static-libs(+)]
+			>=dev-libs/openssl-1.0.1:0=[bindist=]
+			dev-libs/openssl:0=[static-libs(+)]
 		)
-		libressl? ( dev-libs/libressl[static-libs(+)] )
+		libressl? ( dev-libs/libressl:0=[static-libs(+)] )
 	)
-	>=sys-libs/zlib-1.2.3[static-libs(+)]"
+	>=sys-libs/zlib-1.2.3:=[static-libs(+)]"
 RDEPEND="
 	!static? ( ${LIB_DEPEND//\[static-libs(+)]} )
 	pam? ( virtual/pam )
@@ -113,9 +114,13 @@ src_prepare() {
 	sed -i '/^AuthorizedKeysFile/s:^:#:' sshd_config || die
 
 	if use X509 ; then
+		if use hpn ; then
+			pushd "${WORKDIR}"/${HPN_PATCH%.*.*} >/dev/null
+			epatch "${FILESDIR}"/${P}-hpn-x509-${X509_VER}-glue.patch
+			popd >/dev/null
+		fi
+		save_version X509
 		epatch "${WORKDIR}"/${X509_PATCH%.*}
-		# We no longer allow X509 to be used with anything else.
-		#save_version X509
 	fi
 
 	if use ldap ; then
@@ -123,10 +128,11 @@ src_prepare() {
 		save_version LPK
 	fi
 
-	epatch "${FILESDIR}"/${PN}-7.4_p1-GSSAPI-dns.patch #165444 integrated into gsskex
+	epatch "${FILESDIR}"/${PN}-7.5_p1-GSSAPI-dns.patch #165444 integrated into gsskex
 	epatch "${FILESDIR}"/${PN}-6.7_p1-openssl-ignore-status.patch
+	epatch "${FILESDIR}"/${PN}-7.5_p1-cross-cache.patch
 	use X509 || epatch "${WORKDIR}"/${SCTP_PATCH%.*}
-	epatch "${FILESDIR}"/${P}-test-bashism.patch
+	use X509 || epatch "${FILESDIR}"/${PN}-7.5_p1-x32-typo.patch
 	use abi_mips_n32 && epatch "${FILESDIR}"/${PN}-7.3-mips-seccomp-n32.patch
 
 	if use hpn ; then
@@ -135,8 +141,6 @@ src_prepare() {
 			epatch "${WORKDIR}"/${HPN_PATCH%.*.*}
 		save_version HPN
 	fi
-
-	epatch "${FILESDIR}"/${PN}-${PV}-no_3des.patch
 
 	tc-export PKG_CONFIG
 	local sed_args=(
@@ -157,14 +161,23 @@ src_prepare() {
 	)
 	sed -i "${sed_args[@]}" configure{.ac,} || die
 
+	if has_version ">=dev-libs/openssl-1.1.0" ; then
+		epatch -p1 "${FILESDIR}/${P}-openssl-1.1.0.patch"
+		epatch "${FILESDIR}/${PN}-openssl-1.1.0-configure.patch"
+		epatch "${FILESDIR}/${PN}-openssl-1.1.0-versioning.patch"
+		if use hpn ; then
+			epatch "${FILESDIR}/${PN}-openssl-1.1.0-hpn.patch"
+		fi
+	fi
+
 	epatch_user #473004
 
 	# Now we can build a sane merged version.h
 	(
 		sed '/^#define SSH_RELEASE/d' version.h.* | sort -u
 		macros=()
-		for p in HPN LPK X509 ; do [ -e version.h.${p} ] && macros+=( SSH_${p} ) ; done
-		printf '#define SSH_RELEASE SSH_VERSION SSH_PORTABLE %s\n' "${macros}"
+		for p in HPN LPK X509; do [[ -e version.h.${p} ]] && macros+=( SSH_${p} ) ; done
+		printf '#define SSH_RELEASE SSH_VERSION SSH_PORTABLE %s\n' "${macros[*]}"
 	) > version.h
 
 	eautoreconf
@@ -185,6 +198,7 @@ src_configure() {
 		--datadir="${EPREFIX}"/usr/share/openssh
 		--with-privsep-path="${EPREFIX}"/var/empty
 		--with-privsep-user=sshd
+		$(use_with audit audit linux)
 		$(use_with kerberos kerberos5 "${EPREFIX}"/usr)
 		# We apply the ldap patch conditionally, so can't pass --without-ldap
 		# unconditionally else we get unknown flag warnings.
@@ -214,7 +228,6 @@ src_install() {
 	dobin contrib/ssh-copy-id
 	newinitd "${FILESDIR}"/sshd.rc6.4 sshd
 	newconfd "${FILESDIR}"/sshd.confd sshd
-	keepdir /var/empty
 
 	newpamd "${FILESDIR}"/sshd.pam_include.2 sshd
 	if use pam ; then

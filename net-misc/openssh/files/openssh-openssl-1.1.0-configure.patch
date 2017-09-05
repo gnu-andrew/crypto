@@ -1,0 +1,40 @@
+--- configure.ac.old	2017-09-04 19:47:29.359892466 +0100
++++ configure.ac	2017-09-04 19:54:51.632791246 +0100
+@@ -2522,8 +2522,8 @@
+ 		if(fd == NULL)
+ 			exit(1);
+ 
+-		if ((rc = fprintf(fd, "%08lx (%s)\n", (unsigned long)SSLeay(),
+-		    SSLeay_version(SSLEAY_VERSION))) < 0)
++		if ((rc = fprintf(fd, "%08lx (%s)\n", OpenSSL_version_num(),
++		    OpenSSL_version(OPENSSL_VERSION))) < 0)
+ 			exit(1);
+ 
+ 		exit(0);
+@@ -2556,7 +2556,7 @@
+ 	#include <openssl/opensslv.h>
+ 	#include <openssl/crypto.h>
+ 		]], [[
+-		exit(SSLeay() == OPENSSL_VERSION_NUMBER ? 0 : 1);
++		exit(OpenSSL_version_num() == OPENSSL_VERSION_NUMBER ? 0 : 1);
+ 		]])],
+ 		[
+ 			AC_MSG_RESULT([yes])
+@@ -2584,7 +2584,7 @@
+ 	AC_MSG_CHECKING([if programs using OpenSSL functions will link])
+ 	AC_LINK_IFELSE(
+ 		[AC_LANG_PROGRAM([[ #include <openssl/evp.h> ]],
+-		[[ SSLeay_add_all_algorithms(); ]])],
++		[[ OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS, NULL); ]])],
+ 		[
+ 			AC_MSG_RESULT([yes])
+ 		],
+@@ -2595,7 +2595,7 @@
+ 			AC_MSG_CHECKING([if programs using OpenSSL need -ldl])
+ 			AC_LINK_IFELSE(
+ 				[AC_LANG_PROGRAM([[ #include <openssl/evp.h> ]],
+-				[[ SSLeay_add_all_algorithms(); ]])],
++				[[ OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS, NULL); ]])],
+ 				[
+ 					AC_MSG_RESULT([yes])
+ 				],

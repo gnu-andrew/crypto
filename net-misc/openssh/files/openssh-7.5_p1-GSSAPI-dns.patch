@@ -16,13 +16,13 @@ https://bugzilla.mindrot.org/show_bug.cgi?id=1008
  	{ "gssapiauthentication", oGssAuthentication },
  	{ "gssapidelegatecredentials", oGssDelegateCreds },
 +	{ "gssapitrustdns", oGssTrustDns },
- #else
+ # else
  	{ "gssapiauthentication", oUnsupported },
  	{ "gssapidelegatecredentials", oUnsupported },
 +	{ "gssapitrustdns", oUnsupported },
  #endif
- 	{ "fallbacktorsh", oDeprecated },
- 	{ "usersh", oDeprecated },
+ #ifdef ENABLE_PKCS11
+ 	{ "smartcarddevice", oPKCS11Provider },
 @@ -930,6 +933,10 @@
  		intptr = &options->gss_deleg_creds;
  		goto parse_flag;
