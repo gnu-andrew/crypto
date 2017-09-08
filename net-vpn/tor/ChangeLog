@@ -1,0 +1,8 @@
+*tor-0.3.0.10 (08 Sep 2017)
+
+  08 Sep 2017; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/README.gentoo, +files/tor-0.2.7.4-torrc.sample.patch,
+  +files/tor-openssl-1.1.0.patch, +files/tor.conf, +files/tor.confd,
+  +files/tor.initd-r8, +files/tor.service, +files/torrc-r1, +metadata.xml,
+  +tor-0.3.0.10.ebuild:
+  net-vpn/tor: Patch to work with OpenSSL 1.1.0.
