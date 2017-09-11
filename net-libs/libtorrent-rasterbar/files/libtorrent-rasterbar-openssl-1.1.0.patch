@@ -1,0 +1,27 @@
+--- a/src/session_impl.cpp.old	2017-02-04 18:16:33.000000000 +0000
++++ b/src/session_impl.cpp	2017-09-08 17:32:55.047177101 +0100
+@@ -158,7 +158,11 @@
+ 	// structures it allocates
+ 	struct openssl_cleanup
+ 	{
+-		~openssl_cleanup() { CRYPTO_cleanup_all_ex_data(); }
++		~openssl_cleanup() {
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
++		    CRYPTO_cleanup_all_ex_data();
++#endif
++		}
+ 	} openssl_global_destructor;
+ }
+ 
+--- a/src/torrent.cpp.old	2017-09-08 17:21:28.606325322 +0100
++++ b/src/torrent.cpp	2017-09-08 17:35:07.593025226 +0100
+@@ -1367,7 +1367,9 @@
+ 		using boost::asio::ssl::context;
+ 
+ 		// this is needed for openssl < 1.0 to decrypt keys created by openssl 1.0+
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 		OpenSSL_add_all_algorithms();
++#endif
+ 
+ 		boost::uint64_t now = total_microseconds(time_now_hires() - min_time());
+ 		// assume 9 bits of entropy (i.e. about 1 millisecond)
