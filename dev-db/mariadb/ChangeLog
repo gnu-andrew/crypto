@@ -1,6 +1,15 @@
 # ChangeLog for dev-db/mariadb
-# Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2017 Gentoo Foundation; Distributed under the GPL v2
 # (auto-generated from git log)
+
+*mariadb-10.2.8 (30 Sep 2017)
+
+  30 Sep 2017; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/mariadb-openssl-1.1.0.patch, +files/my.cnf-10.2,
+  +files/my.cnf.distro-client, +files/my.cnf.distro-server,
+  +mariadb-10.2.8.ebuild, -files/mariadb-des.patch, -files/my.cnf-5.6,
+  -mariadb-10.1.19.ebuild, metadata.xml:
+  dev-db/mariadb: Update to 10.2.8 and support OpenSSL 1.1.0.
 
 *mariadb-10.1.19 (15 Nov 2016)
 

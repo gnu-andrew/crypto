@@ -1,0 +1,35 @@
+--- a/include/ssl_compat.h.old	2017-08-17 11:05:38.000000000 +0100
++++ b/include/ssl_compat.h	2017-09-23 21:00:51.091503845 +0100
+@@ -27,12 +27,22 @@
+ #define HAVE_OPENSSL11 1
+ #define ERR_remove_state(X) ERR_clear_error()
+ #define EVP_MD_CTX_cleanup(X) EVP_MD_CTX_reset(X)
++#define EVP_CIPHER_CTX_cleanup(X) EVP_CIPHER_CTX_reset(X)
++#define EVP_cleanup() while(0) continue
++#define CRYPTO_cleanup_all_ex_data() while(0) continue
++#define ERR_free_strings() while(0) continue
++#define X509_get_notBefore(X) X509_getm_notBefore(X)
++#define X509_get_notAfter(X) X509_getm_notAfter(X)
++#define SSLeay_version(X) OpenSSL_version(X)
++#define SSLEAY_VERSION OPENSSL_VERSION
+ #define EVP_CIPHER_CTX_SIZE 168
+ #define EVP_MD_CTX_SIZE 48
+ #undef EVP_MD_CTX_init
+ #define EVP_MD_CTX_init(X) do { bzero((X), EVP_MD_CTX_SIZE); EVP_MD_CTX_reset(X); } while(0)
+ #undef EVP_CIPHER_CTX_init
+ #define EVP_CIPHER_CTX_init(X) do { bzero((X), EVP_CIPHER_CTX_SIZE); EVP_CIPHER_CTX_reset(X); } while(0)
++#define SSL_load_error_strings() OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS \
++						  | OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL)
+ 
+ #else
+ #define HAVE_OPENSSL10 1
+--- a/sql/sys_vars.cc.old	2017-08-17 11:05:40.000000000 +0100
++++ b/sql/sys_vars.cc	2017-09-23 20:54:04.266029705 +0100
+@@ -3533,6 +3533,7 @@
+ #define SSL_LIBRARY "YaSSL " YASSL_VERSION
+ #elif HAVE_OPENSSL
+ #include <openssl/crypto.h>
++#include <ssl_compat.h>
+ #define SSL_LIBRARY SSLeay_version(SSLEAY_VERSION)
+ #else
+ #error No SSL?
