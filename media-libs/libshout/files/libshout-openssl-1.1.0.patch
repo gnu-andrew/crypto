@@ -1,0 +1,30 @@
+--- src/tls.c.old	2015-06-18 05:27:45.000000000 +0100
++++ src/tls.c	2017-09-13 16:36:20.135359903 +0100
+@@ -28,6 +28,7 @@
+ 
+ #ifndef XXX_HAVE_X509_check_host
+ #include <ctype.h>
++#include <string.h>
+ #endif
+ 
+ struct _shout_tls {
+@@ -61,14 +62,18 @@
+ 
+ static inline int tls_setup(shout_tls_t *tls)
+ {
+-	SSL_METHOD *meth;
++	const SSL_METHOD *meth;
+ 
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 	SSL_library_init();
+ 	SSL_load_error_strings();
+ 	SSLeay_add_all_algorithms();
+  	SSLeay_add_ssl_algorithms();
+ 
+ 	meth = TLSv1_client_method();
++#else
++	meth = TLS_client_method();
++#endif
+ 	if (!meth)
+ 		goto error;
+ 
