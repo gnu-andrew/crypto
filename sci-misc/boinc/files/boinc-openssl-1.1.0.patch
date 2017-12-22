@@ -1,0 +1,34 @@
+--- a/lib/crypt.cpp.old	2017-08-10 06:59:31.000000000 +0100
++++ b/lib/crypt.cpp	2017-12-13 05:33:45.380793928 +0000
+@@ -44,6 +44,7 @@
+ #include <openssl/engine.h>
+ #include <openssl/err.h>
+ #include <openssl/rsa.h>
++#include <openssl/bn.h>
+ 
+ #ifdef _USING_FCGI_
+ #include "boinc_fcgi.h"
+@@ -720,8 +721,13 @@
+     int rbytes;
+     unsigned char md5_md[MD5_DIGEST_LENGTH],  rbuf[2048];
+ 
++#if OPENSSL_VERSION_NUMBER < 0x10100000
+     SSL_load_error_strings();
+     SSL_library_init();
++#else
++    OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS |
++                     OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
++#endif
+ 
+     if (!is_file(origFile)) {
+         return NULL;
+@@ -772,7 +778,9 @@
+         fflush(stdout);
+         return false;
+     }
++#if OPENSSL_VERSION_NUMBER < 0x10100000
+     SSL_library_init();
++#endif
+     if (!is_file(origFile)) return false;
+     FILE* of = boinc_fopen(origFile, "r");
+     if (!of) return false;
