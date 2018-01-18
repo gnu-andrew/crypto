@@ -1,11 +1,11 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2018 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
 
-WX_GTK_VER=3.0
+WX_GTK_VER=3.0-gtk3
 
-inherit autotools eutils linux-info systemd user versionator wxwidgets
+inherit autotools eutils gnome2-utils linux-info systemd user versionator wxwidgets
 
 MY_PV=$(get_version_component_range 1-2)
 
@@ -40,7 +40,7 @@ RDEPEND="
 		media-libs/freeglut
 		sys-libs/glibc:2.2
 		virtual/jpeg:0=
-		x11-libs/gtk+:2
+		x11-libs/gtk+:3
 		>=x11-libs/libnotify-0.7
 		x11-libs/wxGTK:${WX_GTK_VER}[X,opengl,webkit]
 	)
@@ -55,6 +55,9 @@ DEPEND="${RDEPEND}
 PATCHES=(
 	# >=x11-libs/wxGTK-3.0.2.0-r3 has webview removed, bug 587462
 	"${FILESDIR}"/fix_webview.patch
+	# xlocale.h was removed in modern glibc, bug 639108
+	"${FILESDIR}"/fix_xlocale.patch
+	# Build against OpenSSL 1.1.0
 	"${FILESDIR}"/${PN}-openssl-1.1.0.patch
 )
 
@@ -135,6 +138,8 @@ src_install() {
 }
 
 pkg_preinst() {
+	gnome2_icon_savelist
+
 	enewgroup ${PN}
 	# note this works only for first install so we have to
 	# elog user about the need of being in video group
@@ -146,6 +151,10 @@ pkg_preinst() {
 }
 
 pkg_postinst() {
+	if [[ -n ${GNOME2_ECLASS_ICONS} ]]; then
+		gnome2_icon_cache_update
+	fi
+
 	elog
 	elog "You are using the source compiled version of boinc."
 	use X && elog "The graphical manager can be found at /usr/bin/boincmgr"
@@ -179,4 +188,10 @@ pkg_postinst() {
 		elog "the correct OpenCL implementation for your graphic card."
 	fi
 	elog
+}
+
+pkg_postrm() {
+	if [[ -n ${GNOME2_ECLASS_ICONS} ]]; then
+		gnome2_icon_cache_update
+	fi
 }
