@@ -1,0 +1,5 @@
+*m2crypto-0.27.0 (02 Feb 2018)
+
+  02 Feb 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/m2crypto-openssl-1.1.0.patch, +m2crypto-0.27.0.ebuild, +metadata.xml:
+  dev-python/m2crypto: Support OpenSSL 1.1.0.
