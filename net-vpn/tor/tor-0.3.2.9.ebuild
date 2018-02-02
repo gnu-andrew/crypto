@@ -1,9 +1,9 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2018 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="6"
 
-inherit flag-o-matic readme.gentoo-r1 systemd versionator user
+inherit autotools flag-o-matic readme.gentoo-r1 systemd versionator user
 
 MY_PV="$(replace_version_separator 4 -)"
 MY_PF="${PN}-${MY_PV}"
@@ -16,7 +16,7 @@ S="${WORKDIR}/${MY_PF}"
 LICENSE="BSD GPL-2"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="libressl scrypt seccomp selinux systemd tor-hardening test web"
+IUSE="libressl lzma scrypt seccomp selinux systemd tor-hardening test web zstd"
 
 DEPEND="
 	app-text/asciidoc
@@ -24,15 +24,18 @@ DEPEND="
 	sys-libs/zlib
 	!libressl? ( dev-libs/openssl:0=[-bindist] )
 	libressl? ( dev-libs/libressl:0= )
+	lzma? ( app-arch/xz-utils )
 	scrypt? ( app-crypt/libscrypt )
 	seccomp? ( sys-libs/libseccomp )
-	systemd? ( sys-apps/systemd )"
+	systemd? ( sys-apps/systemd )
+	zstd? ( app-arch/zstd )"
 RDEPEND="${DEPEND}
 	selinux? ( sec-policy/selinux-tor )"
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-0.2.7.4-torrc.sample.patch
 	"${FILESDIR}"/${PN}-openssl-1.1.0.patch
+	"${FILESDIR}"/${PN}-openssl-1.1.0-configure.patch
 )
 
 DOCS=( README ChangeLog ReleaseNotes doc/HACKING )
@@ -42,11 +45,19 @@ pkg_setup() {
 	enewuser tor -1 -1 /var/lib/tor tor
 }
 
+src_prepare() {
+	default
+	eautoreconf
+}
+
 src_configure() {
 	econf \
 		--localstatedir="${EPREFIX}/var" \
 		--enable-system-torrc \
 		--enable-asciidoc \
+		--disable-libfuzzer \
+		--disable-rust \
+		$(use_enable lzma) \
 		$(use_enable scrypt libscrypt) \
 		$(use_enable seccomp) \
 		$(use_enable systemd) \
@@ -54,7 +65,8 @@ src_configure() {
 		$(use_enable tor-hardening linker-hardening) \
 		$(use_enable web tor2web-mode) \
 		$(use_enable test unittests) \
-		$(use_enable test coverage)
+		$(use_enable test coverage) \
+		$(use_enable zstd)
 }
 
 src_install() {
