@@ -34,6 +34,7 @@ RDEPEND="${DEPEND}
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-0.2.7.4-torrc.sample.patch
+	"${FILESDIR}"/${PN}-pid.patch
 	"${FILESDIR}"/${PN}-openssl-1.1.0.patch
 	"${FILESDIR}"/${PN}-openssl-1.1.0-configure.patch
 )
@@ -81,6 +82,11 @@ src_install() {
 
 	fperms 750 /var/lib/tor
 	fowners tor:tor /var/lib/tor
+
+	keepdir /var/run/tor
+
+	fperms 750 /var/run/tor
+	fowners tor:tor /var/run/tor
 
 	insinto /etc/tor/
 	newins "${FILESDIR}"/torrc-r1 torrc
