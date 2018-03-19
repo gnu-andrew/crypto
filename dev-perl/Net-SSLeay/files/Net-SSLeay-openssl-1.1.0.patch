@@ -1,0 +1,366 @@
+--- a/SSLeay.xs.old	2017-10-13 03:47:21.000000000 +0100
++++ b/SSLeay.xs	2018-03-19 02:10:14.228662798 +0000
+@@ -160,6 +160,7 @@
+  typedef struct block BLOCK;
+ */
+ #define BLOCK OPENSSL_BLOCK
++#include <openssl/bn.h>
+ #include <openssl/err.h>
+ #include <openssl/lhash.h>
+ #include <openssl/rand.h>
+@@ -178,6 +179,9 @@
+ #ifndef OPENSSL_NO_MD5
+ #include <openssl/md5.h>     /* openssl-SNAP-20020227 does not automatically include this */
+ #endif
++#ifndef OPENSSL_NO_RSA
++#include <openssl/rsa.h>
++#endif
+ #if OPENSSL_VERSION_NUMBER >= 0x00905000L
+ #include <openssl/ripemd.h>
+ #endif
+@@ -195,6 +199,13 @@
+ #if OPENSSL_VERSION_NUMBER >= 0x10000000L
+ #include <openssl/ocsp.h>
+ #endif
++#if OPENSSL_VERSION_NUMBER >= 0x10100000L
++#define TLSv1_method TLS_method
++#define TLSv1_1_method TLS_method
++#define TLSv1_2_method TLS_method
++#define SSL_library_init() OPENSSL_init_ssl(0, NULL)
++#define ASN1_STRING_data ASN1_STRING_get0_data
++#endif
+ #undef BLOCK
+ 
+ /* Debugging output - to enable use:
+@@ -868,7 +879,7 @@
+     secretsv = sv_2mortal( newSVpv(secret, *secret_len));
+     XPUSHs(secretsv);
+     for (i=0; i<sk_SSL_CIPHER_num(peer_ciphers); i++) {
+-        SSL_CIPHER *c = sk_SSL_CIPHER_value(peer_ciphers,i);
++        const SSL_CIPHER *c = sk_SSL_CIPHER_value(peer_ciphers,i);
+         av_store(ciphers, i, sv_2mortal(newSVpv(SSL_CIPHER_get_name(c), 0)));
+     }
+     XPUSHs(sv_2mortal(newRV_inc((SV*)ciphers)));
+@@ -1692,6 +1703,8 @@
+ 
+ #define REM0 "============= version related functions =============="
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++
+ unsigned long
+ SSLeay()
+ 
+@@ -1699,6 +1712,17 @@
+ SSLeay_version(type=0)
+         int type
+ 
++#else
++
++unsigned long
++OpenSSL_version_num()
++
++const char *
++OpenSSL_version(type=0)
++        int type
++
++#endif
++
+ #define REM1 "============= SSL CONTEXT functions =============="
+ 
+ SSL_CTX *
+@@ -2471,10 +2495,10 @@
+ 
+ #endif
+ 
+-BIO_METHOD *
++const BIO_METHOD *
+ BIO_f_ssl()
+ 
+-BIO_METHOD *
++const BIO_METHOD *
+ BIO_s_mem()
+ 
+ unsigned long
+@@ -2503,12 +2527,16 @@
+      OUTPUT:
+      RETVAL
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++
+ void
+ SSL_load_error_strings()
+ 
+ void
+ ERR_load_crypto_strings()
+ 
++#endif
++
+ int
+ SSL_FIPS_mode_set(int onoff)
+        CODE:
+@@ -2596,6 +2624,8 @@
+     OUTPUT:
+         RETVAL
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++
+ int
+ RAND_pseudo_bytes(buf, num)
+     SV *buf
+@@ -2612,6 +2642,8 @@
+     OUTPUT:
+         RETVAL
+ 
++#endif
++
+ void
+ RAND_add(buf, num, entropy)
+     SV *buf
+@@ -2653,9 +2685,13 @@
+      CODE:
+      RAND_seed (buf, (int)len);
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++
+ void
+ RAND_cleanup()
+ 
++#endif
++
+ int
+ RAND_load_file(file_name, how_much)
+      char *  file_name
+@@ -2930,12 +2966,24 @@
+ int
+ X509_CRL_set_issuer_name(X509_CRL *x, X509_NAME *name)
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++
+ int
+ X509_CRL_set_lastUpdate(X509_CRL *x, ASN1_TIME *tm)
+ 
+ int
+ X509_CRL_set_nextUpdate(X509_CRL *x, ASN1_TIME *tm)
+ 
++#else
++
++int
++X509_CRL_set1_lastUpdate(X509_CRL *x, const ASN1_TIME *tm)
++
++int
++X509_CRL_set1_nextUpdate(X509_CRL *x, const ASN1_TIME *tm)
++
++#endif
++
+ int
+ X509_CRL_sort(X509_CRL *x)
+ 
+@@ -2947,12 +2995,24 @@
+ X509_NAME *
+ X509_CRL_get_issuer(X509_CRL *x)
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++	    
+ ASN1_TIME *
+ X509_CRL_get_lastUpdate(X509_CRL *x)
+ 
+ ASN1_TIME *
+ X509_CRL_get_nextUpdate(X509_CRL *x)
+ 
++#else
++
++const ASN1_TIME *
++X509_CRL_get0_lastUpdate(const X509_CRL *x)
++
++const ASN1_TIME *
++X509_CRL_get0_nextUpdate(const X509_CRL *x)
++	    
++#endif
++
+ int
+ X509_CRL_verify(X509_CRL *a, EVP_PKEY *r)
+ 
+@@ -3724,6 +3784,8 @@
+         if (utf8_decode) sv_utf8_decode(u8);
+         XPUSHs(sv_2mortal(u8));
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++
+ ASN1_TIME *
+ X509_get_notBefore(cert)
+      X509 *	cert
+@@ -3732,6 +3794,26 @@
+ X509_get_notAfter(cert)
+      X509 *	cert
+ 
++#else
++
++ASN1_TIME *
++X509_getm_notBefore(cert)
++     const X509 *	cert
++
++ASN1_TIME *
++X509_getm_notAfter(cert)
++     const X509 *	cert
++
++const ASN1_TIME *
++X509_get0_notBefore(cert)
++     const X509 *	cert
++
++const ASN1_TIME *
++X509_get0_notAfter(cert)
++     const X509 *	cert
++
++#endif
++
+ ASN1_TIME *
+ X509_gmtime_adj(s, adj)
+      ASN1_TIME * s
+@@ -4001,8 +4083,13 @@
+         RETVAL = 0;
+         if ((fp = fopen (file, "rb"))) {
+ #if OPENSSL_VERSION_NUMBER >= 0x0090700fL
++#if OPENSSL_API_COMPAT < 0x10100000L
+             OPENSSL_add_all_algorithms_noconf();
+ #else
++	    OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS
++				| OPENSSL_INIT_ADD_ALL_DIGESTS, NULL);
++#endif
++#else
+             OpenSSL_add_all_algorithms();
+ #endif
+             if ((p12 = d2i_PKCS12_fp(fp, NULL))) {
+@@ -4040,8 +4127,13 @@
+     PPCODE:
+         if ((fp = fopen (file, "rb"))) {
+ #if OPENSSL_VERSION_NUMBER >= 0x0090700fL
++#if OPENSSL_API_COMPAT < 0x10100000L
+             OPENSSL_add_all_algorithms_noconf();
+ #else
++	    OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS
++				| OPENSSL_INIT_ADD_ALL_DIGESTS, NULL);
++#endif
++#else
+             OpenSSL_add_all_algorithms();
+ #endif
+             if ((p12 = d2i_PKCS12_fp(fp, NULL))) {
+@@ -5191,7 +5283,7 @@
+ 
+ #endif
+ 
+-#ifdef __ANDROID__
++#if defined(__ANDROID__) || OPENSSL_API_COMPAT >= 0x10100000L
+ 
+ RSA *
+ RSA_generate_key(bits,ee,perl_cb=&PL_sv_undef,perl_data=&PL_sv_undef)
+@@ -5210,14 +5302,21 @@
+        e = BN_new();
+        BN_set_word(e, ee);
+        cb_data = simple_cb_data_new(perl_cb, perl_data);
++#if OPENSSL_API_COMPAT < 0x10100000L
+        BN_GENCB new_cb;
+-       BN_GENCB_set_old(&new_cb, ssleay_RSA_generate_key_cb_invoke, cb_data);
+-
++       BN_GENCB* new_cb_ptr = &new_cb;
++#else
++       BN_GENCB *new_cb_ptr = BN_GENCB_new();
++#endif
++       BN_GENCB_set_old(new_cb_ptr, ssleay_RSA_generate_key_cb_invoke, cb_data);
+        ret = RSA_new();
+-       rc = RSA_generate_key_ex(ret, bits, e, &new_cb);
++       rc = RSA_generate_key_ex(ret, bits, e, new_cb_ptr);
+        
+        if (rc == -1 || ret == NULL)
+            croak("Couldn't generate RSA key");
++#if OPENSSL_API_COMPAT >= 0x10100000L
++       BN_GENCB_free(new_cb_ptr);
++#endif
+        simple_cb_data_free(cb_data);
+        BN_free(e);
+        e = NULL;
+@@ -5330,10 +5429,14 @@
+     OUTPUT:
+         RETVAL
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++	
+ void
+ DH_free(dh)
+ 	DH * dh
+ 
++#endif
++
+ long
+ SSL_total_renegotiations(ssl)
+      SSL *	ssl
+@@ -5618,8 +5721,13 @@
+ const EVP_MD *EVP_sha512()
+ 
+ #endif
++
++#if OPENSSL_API_COMPAT < 0x10100000L
++
+ void OpenSSL_add_all_digests()
+ 
++#endif
++
+ const EVP_MD * EVP_get_digestbyname(const char *name)
+ 
+ int EVP_MD_type(const EVP_MD *md)
+@@ -5709,6 +5817,8 @@
+ const EVP_CIPHER *
+ EVP_get_cipherbyname(const char *name)
+ 
++#if OPENSSL_API_COMPAT < 0x10100000L
++
+ void
+ OpenSSL_add_all_algorithms()
+ 
+@@ -5722,6 +5832,20 @@
+ 
+ #endif
+ 
++#else
++
++int
++OPENSSL_init_crypto(opts, settings)
++    uint64_t opts
++    const OPENSSL_INIT_SETTINGS *settings
++
++int
++OPENSSL_init_ssl(opts, settings)
++    uint64_t opts
++    const OPENSSL_INIT_SETTINGS *settings
++
++#endif
++
+ #if OPENSSL_VERSION_NUMBER >= 0x10000000L
+ 
+ int
+--- a/typemap.old	2014-05-08 21:45:48.000000000 +0100
++++ b/typemap	2018-03-19 02:08:29.458332290 +0000
+@@ -25,6 +25,7 @@
+ BIGNUM *        T_PTR
+ BIO *           T_PTR
+ BIO_METHOD *    T_PTR
++const BIO_METHOD *    T_PTR
+ EVP_PKEY *      T_PTR
+ const EVP_MD *  T_PTR
+ EVP_MD *        T_PTR
+@@ -36,6 +37,7 @@
+ struct cert_st * T_PTR
+ X509_STORE_CTX * T_PTR
+ ASN1_TIME *      T_PTR
++const ASN1_TIME *      T_PTR
+ ASN1_OCTET_STRING *   T_PTR
+ const ASN1_INTEGER *   T_PTR
+ ASN1_INTEGER *   T_PTR
+@@ -74,6 +76,8 @@
+ cb_ssl_int_int_ret_RSA *  T_PTR
+ cb_ssl_int_int_ret_DH  *  T_PTR
+ perl_filehandle_t T_PERL_IO_HANDLE
++uint64_t T_UV
++const OPENSSL_INIT_SETTINGS *	T_PTR
+ 
+ INPUT
+ 
