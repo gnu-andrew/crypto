@@ -1,6 +1,15 @@
 # ChangeLog for dev-qt/qtcore
-# Copyright 1999-2015 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2018 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/dev-qt/qtcore/ChangeLog,v 1.68 2015/03/29 03:42:21 pesa Exp $
+
+*qtcore-4.8.7-r4 (30 Apr 2018)
+
+  30 Apr 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/qtcore-4.8.7-libressl.patch, +files/qtcore-4.8.7-moc.patch,
+  +files/qtcore-openssl-1.1.0.patch, +qtcore-4.8.7-r4.ebuild,
+  -files/qtcore-4.8.5-moc-boost-lexical-cast.patch, -qtcore-4.8.7.ebuild,
+  metadata.xml:
+  dev-qt/qtcore: support OpenSSL 1.1.0.
 
 *qtcore-4.8.7 (11 Sep 2015)
 
