@@ -42,7 +42,6 @@ PATCHES=(
 	"${FILESDIR}/${PN}-openssl-1.1.0.patch"
 )
 
-
 QT4_TARGET_DIRECTORIES="
 	src/tools/bootstrap
 	src/tools/moc

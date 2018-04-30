@@ -2,6 +2,10 @@
 # Copyright 1999-2018 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/dev-qt/qtcore/ChangeLog,v 1.68 2015/03/29 03:42:21 pesa Exp $
 
+  30 Apr 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  qtcore-4.8.7-r4.ebuild:
+  dev-qt/qtcore: Remove superfluous blank line.
+
 *qtcore-4.8.7-r4 (30 Apr 2018)
 
   30 Apr 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
