@@ -9,6 +9,8 @@ DIST_EXAMPLES=("examples/*")
 inherit flag-o-matic multilib perl-module
 
 DESCRIPTION="Perl extension for using OpenSSL"
+SRC_URI="${SRC_URI}
+	http://fuseyism.com/patches/${PN}-openssl-1.1.0-updated-constants.patch"
 
 LICENSE="openssl"
 SLOT="0"
@@ -39,6 +41,7 @@ PATCHES=(
 	"${FILESDIR}/${PN}-1.82-fix-libdir.patch"
 	"${FILESDIR}/${PN}-1.82-fix-network-tests.patch"
 	"${FILESDIR}/${PN}-openssl-1.1.0.patch"
+	"${DISTDIR}/${PN}-openssl-1.1.0-updated-constants.patch"
 )
 
 src_prepare() {
