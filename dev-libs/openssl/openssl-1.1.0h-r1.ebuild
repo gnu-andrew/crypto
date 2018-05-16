@@ -1,19 +1,19 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2018 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=5
+EAPI="6"
 
-inherit eutils flag-o-matic toolchain-funcs multilib multilib-minimal
+inherit flag-o-matic toolchain-funcs multilib multilib-minimal
 
 MY_P=${P/_/-}
 DESCRIPTION="full-strength general purpose cryptography library (including SSL and TLS)"
-HOMEPAGE="http://www.openssl.org/"
+HOMEPAGE="https://www.openssl.org/"
 SRC_URI="mirror://openssl/source/${MY_P}.tar.gz"
 
 LICENSE="openssl"
 SLOT="0/1.1" # .so version of libssl/libcrypto
 KEYWORDS="~amd64"
-IUSE="+asm bindist +camellia idea mdc2 rc5 rfc3779 sctp cpu_flags_x86_sse2 static-libs test tls-heartbeat vanilla zlib"
+IUSE="+asm bindist +camellia elibc_musl idea mdc2 rc5 rfc3779 sctp cpu_flags_x86_sse2 static-libs test tls-heartbeat vanilla zlib"
 RESTRICT="!bindist? ( bindist )"
 
 RDEPEND=">=app-misc/c_rehash-1.7-r1
@@ -27,6 +27,27 @@ DEPEND="${RDEPEND}
 	)"
 PDEPEND="app-misc/ca-certificates"
 
+# This does not copy the entire Fedora patchset, but JUST the parts that
+# are needed to make it safe to use EC with RESTRICT=bindist.
+# See openssl.spec for the matching numbering of SourceNNN, PatchNNN
+SOURCE1=hobble-openssl
+SOURCE12=ec_curve.c
+SOURCE13=ectest.c
+PATCH1=openssl-1.1.0-build.patch # Fixes EVP testcase for EC
+PATCH37=openssl-1.1.0-ec-curves.patch
+FEDORA_GIT_BASE='https://src.fedoraproject.org/cgit/rpms/openssl.git/plain/'
+FEDORA_GIT_BRANCH='f27'
+FEDORA_SRC_URI=()
+FEDORA_SOURCE=( $SOURCE1 $SOURCE12 $SOURCE13 )
+FEDORA_PATCH=( $PATCH1 $PATCH37 )
+for i in "${FEDORA_SOURCE[@]}" ; do
+	FEDORA_SRC_URI+=( "${FEDORA_GIT_BASE}/${i}?h=${FEDORA_GIT_BRANCH} -> ${P}_${i}" )
+done
+for i in "${FEDORA_PATCH[@]}" ; do # Already have a version prefix
+	FEDORA_SRC_URI+=( "${FEDORA_GIT_BASE}/${i}?h=${FEDORA_GIT_BRANCH} -> ${i}" )
+done
+SRC_URI+=" bindist? ( ${FEDORA_SRC_URI[@]} )"
+
 S="${WORKDIR}/${MY_P}"
 
 MULTILIB_WRAPPED_HEADERS=(
@@ -35,9 +56,27 @@ MULTILIB_WRAPPED_HEADERS=(
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-1.0.2a-x32-asm.patch #542618
+	"${FILESDIR}"/${P}-CVE-2018-0737.patch
 )
 
 src_prepare() {
+	if use bindist; then
+		# This just removes the prefix, and puts it into WORKDIR like the RPM.
+		for i in "${FEDORA_SOURCE[@]}" ; do
+			cp -f "${DISTDIR}"/"${P}_${i}" "${WORKDIR}"/"${i}" || die
+		done
+		# .spec %prep
+		bash "${WORKDIR}"/"${SOURCE1}" || die
+		cp -f "${WORKDIR}"/"${SOURCE12}" "${S}"/crypto/ec/ || die
+		cp -f "${WORKDIR}"/"${SOURCE13}" "${S}"/test/ || die
+		for i in "${FEDORA_PATCH[@]}" ; do
+			eapply "${DISTDIR}"/"${i}"
+		done
+		# Also see the configure parts below:
+		# enable-ec \
+		# $(use_ssl !bindist ec2m) \
+
+	fi
 	# keep this in sync with app-misc/c_rehash
 	SSL_CNF_DIR="/etc/ssl"
 
@@ -46,9 +85,10 @@ src_prepare() {
 	rm -f Makefile
 
 	if ! use vanilla ; then
-		epatch "${PATCHES[@]}"
-		epatch_user #332661
+		eapply "${PATCHES[@]}"
 	fi
+
+	eapply_user #332661
 
 	# make sure the man pages are suffixed #302165
 	# don't bother building man pages if they're disabled
@@ -64,7 +104,7 @@ src_prepare() {
 		|| die
 
 	# show the actual commands in the log
-	sed -i '/^SET_X/s@=.*@=set -x@' Makefile.shared
+	sed -i '/^SET_X/s@=.*@=set -x@' Makefile.shared || die
 
 	# quiet out unknown driver argument warnings since openssl
 	# doesn't have well-split CFLAGS and we're making it even worse
@@ -73,7 +113,7 @@ src_prepare() {
 
 	# allow openssl to be cross-compiled
 	cp "${FILESDIR}"/gentoo.config-1.0.2 gentoo.config || die
-	chmod a+rx gentoo.config
+	chmod a+rx gentoo.config || die
 
 	append-flags -fno-strict-aliasing
 	append-flags $(test-flags-CC -Wa,--noexecstack)
@@ -104,11 +144,11 @@ multilib_src_configure() {
 	tc-export CC AR RANLIB RC
 
 	# Clean out patent-or-otherwise-encumbered code
-	# Camellia: Royalty Free            http://en.wikipedia.org/wiki/Camellia_(cipher)
-	# IDEA:     Expired                 http://en.wikipedia.org/wiki/International_Data_Encryption_Algorithm
-	# EC:       ????????? ??/??/2015    http://en.wikipedia.org/wiki/Elliptic_Curve_Cryptography
-	# MDC2:     Expired                 http://en.wikipedia.org/wiki/MDC-2
-	# RC5:      Expired                 http://en.wikipedia.org/wiki/RC5
+	# Camellia: Royalty Free            https://en.wikipedia.org/wiki/Camellia_(cipher)
+	# IDEA:     Expired                 https://en.wikipedia.org/wiki/International_Data_Encryption_Algorithm
+	# EC:       ????????? ??/??/2015    https://en.wikipedia.org/wiki/Elliptic_Curve_Cryptography
+	# MDC2:     Expired                 https://en.wikipedia.org/wiki/MDC-2
+	# RC5:      Expired                 https://en.wikipedia.org/wiki/RC5
 
 	use_ssl() { usex $1 "enable-${2:-$1}" "no-${2:-$1}" " ${*:3}" ; }
 	echoit() { echo "$@" ; "$@" ; }
@@ -131,16 +171,21 @@ multilib_src_configure() {
 	local config="Configure"
 	[[ -z ${sslout} ]] && config="config"
 
+	# Fedora hobbled-EC needs 'no-ec2m'
+	# 'srp' was restricted until early 2017 as well.
 	echoit \
 	./${config} \
 		${sslout} \
 		--api=1.0.0 \
 		$(use cpu_flags_x86_sse2 || echo "no-sse2") \
 		disable-deprecated \
-		$(use_ssl !bindist ec) \
 		${ec_nistp_64_gcc_128} \
 		$(use_ssl asm) \
 		$(use_ssl camellia) \
+		enable-ec \
+		$(use_ssl !bindist ec2m) \
+		enable-srp \
+		$(use elibc_musl && echo "no-async") \
 		$(use_ssl idea) \
 		$(use_ssl mdc2) \
 		$(use_ssl rc5) \
@@ -189,23 +234,22 @@ multilib_src_install() {
 multilib_src_install_all() {
 	# openssl installs perl version of c_rehash by default, but
 	# we provide a shell version via app-misc/c_rehash
-	rm "${ED}"/usr/bin/c_rehash || die
+	rm "${ED%/}"/usr/bin/c_rehash || die
 
 	dodoc CHANGES* FAQ NEWS README doc/*.txt doc/${PN}-c-indent.el
-	dohtml -r doc/*
 
 	# This is crappy in that the static archives are still built even
 	# when USE=static-libs.  But this is due to a failing in the openssl
 	# build system: the static archives are built as PIC all the time.
 	# Only way around this would be to manually configure+compile openssl
 	# twice; once with shared lib support enabled and once without.
-	use static-libs || rm -f "${ED}"/usr/lib*/lib*.a
+	use static-libs || rm -f "${ED%/}"/usr/lib*/lib*.a
 
 	# create the certs directory
 	keepdir ${SSL_CNF_DIR}/certs
 
 	# Namespace openssl programs to prevent conflicts with other man pages
-	cd "${ED}"/usr/share/man
+	cd "${ED%/}"/usr/share/man || die
 	local m d s
 	for m in $(find . -type f | xargs grep -L '#include') ; do
 		d=${m%/*} ; d=${d#./} ; m=${m##*/}
@@ -220,6 +264,7 @@ multilib_src_install_all() {
 		for s in $(find -L ${d} -type l) ; do
 			s=${s##*/}
 			rm -f ${d}/${s}
+			# We don't want to "|| die" here
 			ln -s ssl-${m} ${d}/ssl-${s}
 			ln -s ssl-${s} ${d}/openssl-${s}
 		done
@@ -227,7 +272,7 @@ multilib_src_install_all() {
 	[[ -n $(find -L ${d} -type l) ]] && die "broken manpage links found :("
 
 	dodir /etc/sandbox.d #254521
-	echo 'SANDBOX_PREDICT="/dev/crypto"' > "${ED}"/etc/sandbox.d/10openssl
+	echo 'SANDBOX_PREDICT="/dev/crypto"' > "${ED%/}"/etc/sandbox.d/10openssl
 
 	diropts -m0700
 	keepdir ${SSL_CNF_DIR}/private

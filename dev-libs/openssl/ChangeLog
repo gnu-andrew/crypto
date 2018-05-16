@@ -1,6 +1,13 @@
 # ChangeLog for dev-libs/openssl
-# Copyright 1999-2017 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2018 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/dev-libs/openssl/ChangeLog,v 1.577 2014/08/07 18:12:48 jer Exp $
+
+*openssl-1.1.0h-r1 (16 May 2018)
+
+  16 May 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/openssl-1.1.0h-CVE-2018-0737.patch, +openssl-1.1.0h-r1.ebuild,
+  -openssl-1.1.0f.ebuild, metadata.xml:
+  dev-libs/openssl: Update to 1.1.0h-r1.
 
 *openssl-1.1.0f (24 Aug 2017)
 
