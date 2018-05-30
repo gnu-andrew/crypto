@@ -1,0 +1,15 @@
+--- a/vio/viossl.c.old	2018-05-30 06:05:22.615064243 +0100
++++ b/vio/viossl.c	2018-05-30 06:27:08.858387746 +0100
+@@ -427,7 +427,12 @@
+       for (j = 0; j < n; j++)
+       {
+         SSL_COMP *c = sk_SSL_COMP_value(ssl_comp_methods, j);
++#if OPENSSL_API_COMPAT < 0x10100000L
+         DBUG_PRINT("info", ("  %d: %s\n", c->id, c->name));
++#else
++        DBUG_PRINT("info", ("  %d: %s\n", SSL_COMP_get_id(c),
++			    SSL_COMP_get0_name(c)));
++#endif
+       }
+   }
+ #endif
