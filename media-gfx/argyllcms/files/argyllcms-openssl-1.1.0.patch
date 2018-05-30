@@ -1,0 +1,25 @@
+--- a/ccast/ccpacket.c.old	2017-11-18 02:24:54.000000000 +0000
++++ b/ccast/ccpacket.c	2018-05-19 06:43:00.405395335 +0100
+@@ -156,9 +156,13 @@
+ #ifdef USING_AXTLS
+ 	if ((p->ctx = ssl_ctx_new(SSL_SERVER_VERIFY_LATER, 1)) == NULL)
+ #else
++#if OPENSSL_API_COMPAT >= 0x10100000L
++	if ((p->ctx = SSL_CTX_new(TLS_client_method())) == NULL)
++#else
+ 	// Want to use TLS_client_method(), but older OpenSSL doesn't have it...
+ 	if ((p->ctx = SSL_CTX_new(TLSv1_client_method())) == NULL)
+ #endif
++#endif
+ 	{
+ 		DBG((g_log,0, "connect ssl_ctx_new failed\n"))
+ 		return ccpacket_context;
+@@ -583,7 +587,7 @@
+ ccpacket *new_ccpacket() {
+ 	ccpacket *p = NULL;
+ 
+-#ifndef USING_AXTLS
++#if !defined(USING_AXTLS) && OPENSSL_VERSION_NUMBER < 0x10100000L
+ 	SSL_load_error_strings();
+ 	SSL_library_init();
+ #endif
