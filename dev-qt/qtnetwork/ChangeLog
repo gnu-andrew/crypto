@@ -1,6 +1,12 @@
 # ChangeLog for dev-qt/qtnetwork
-# Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2018 Gentoo Foundation; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/dev-qt/qtnetwork/ChangeLog,v 1.15 2015/04/25 18:24:48 kensington Exp $
+
+*qtnetwork-5.9.5 (20 Jun 2018)
+
+  20 Jun 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +qtnetwork-5.9.5.ebuild, -qtnetwork-5.7.1.ebuild:
+  dev-qt/qtnetwork: Update to 5.9.5 and support OpenSSL 1.1.0.
 
 *qtnetwork-5.7.1 (29 Dec 2016)
 

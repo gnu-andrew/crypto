@@ -1,18 +1,19 @@
-# Copyright 1999-2016 Gentoo Foundation
+# Copyright 1999-2018 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Id$
 
 EAPI=6
 QT5_MODULE="qtbase"
 inherit qt5-build
 
 DESCRIPTION="Network abstraction library for the Qt5 framework"
+SRC_URI="${SRC_URI}
+	http://fuseyism.com/patches/${PN}-openssl-1.1.0.patch"
 
 if [[ ${QT5_BUILD_TYPE} == release ]]; then
 	KEYWORDS="~amd64"
 fi
 
-IUSE="bindist connman libproxy networkmanager +ssl"
+IUSE="bindist connman libproxy libressl networkmanager +ssl"
 
 DEPEND="
 	~dev-qt/qtcore-${PV}
@@ -20,7 +21,10 @@ DEPEND="
 	connman? ( ~dev-qt/qtdbus-${PV} )
 	libproxy? ( net-libs/libproxy )
 	networkmanager? ( ~dev-qt/qtdbus-${PV} )
-	ssl? ( dev-libs/openssl:0[bindist=] )
+	ssl? (
+		!libressl? ( dev-libs/openssl:0=[bindist=] )
+		libressl? ( dev-libs/libressl:0= )
+	)
 "
 RDEPEND="${DEPEND}
 	connman? ( net-misc/connman )
@@ -28,6 +32,7 @@ RDEPEND="${DEPEND}
 "
 
 PATCHES=(
+	"${DISTDIR}/${PN}-openssl-1.1.0.patch"
 	"${FILESDIR}/${PN}-5.6-aes256.patch"
 )
 
@@ -41,6 +46,10 @@ QT5_GENTOO_CONFIG=(
 	ssl::SSL
 	ssl::OPENSSL
 	ssl:openssl-linked:LINKED_OPENSSL
+)
+
+QT5_GENTOO_PRIVATE_CONFIG=(
+	:network
 )
 
 pkg_setup() {
