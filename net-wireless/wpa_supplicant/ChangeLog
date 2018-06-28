@@ -1,0 +1,19 @@
+*wpa_supplicant-2.6-r8 (28 Jun 2018)
+
+  28 Jun 2018; Andrew John Hughes <gnu_andrew@member.fsf.org> +files/2017-1/reba
+  sed-v2.6-0001-hostapd-Avoid-key-reinstallation-in-FT-handshake.patch, +files/2
+  017-1/rebased-v2.6-0002-Prevent-reinstallation-of-an-already-in-use-group-ke.p
+  atch, +files/2017-1/rebased-v2.6-0003-Extend-protection-of-GTK-IGTK-reinstalla
+  tion-of-WNM-.patch,
+  +files/2017-1/rebased-v2.6-0004-Prevent-installation-of-an-all-zero-TK.patch, 
+  +files/2017-1/rebased-v2.6-0005-Fix-PTK-rekeying-to-generate-a-new-ANonce.patc
+  h, +files/2017-1/rebased-v2.6-0006-TDLS-Reject-TPK-TK-reconfiguration.patch, +
+  files/2017-1/rebased-v2.6-0007-WNM-Ignore-WNM-Sleep-Mode-Response-without-pend
+  ing-r.patch, +files/2017-1/rebased-v2.6-0008-FT-Do-not-allow-multiple-Reassoci
+  ation-Response-fram.patch, +files/wpa_cli.sh,
+  +files/wpa_supplicant-2.6-do-not-call-dbus-functions-with-NULL-path.patch,
+  +files/wpa_supplicant-2.6-libressl-compatibility.patch,
+  +files/wpa_supplicant-conf.d, +files/wpa_supplicant-init.d,
+  +files/wpa_supplicant-openssl-1.1.0.patch, +files/wpa_supplicant.conf,
+  +metadata.xml, +wpa_supplicant-2.6-r8.ebuild:
+  net-wireless/wpa_supplicant: Fully support OpenSSL 1.1.0.
