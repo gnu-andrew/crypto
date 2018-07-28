@@ -1,0 +1,13 @@
+*git-2.18.0 (28 Jul 2018)
+
+  28 Jul 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/50git-gentoo.el, +files/git-2.18.0_rc1-optional-cvs.patch,
+  +files/git-2.2.0-svn-fe-linking.patch,
+  +files/git-2.5.1-freebsd-10.x-no-iconv.patch,
+  +files/git-2.7.0-mediawiki-500pages.patch,
+  +files/git-2.7.0-mediawiki-namespaces.patch,
+  +files/git-2.7.0-mediawiki-subpages.patch, +files/git-daemon-r1.initd,
+  +files/git-daemon.confd, +files/git-daemon.socket, +files/git-daemon.xinetd,
+  +files/git-daemon_at-r1.service, +files/git-openssl-1.1.0.patch,
+  +git-2.18.0.ebuild, +metadata.xml:
+  dev-vcs/git: Support OpenSSL 1.1.0.
