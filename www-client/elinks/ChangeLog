@@ -1,0 +1,12 @@
+*elinks-0.12_pre6-r4 (28 Jul 2018)
+
+  28 Jul 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +elinks-0.12_pre6-r4.ebuild, +files/elinks-0.11.2-lua-5.1.patch,
+  +files/elinks-0.12_pre5-compilation-fix.patch,
+  +files/elinks-0.12_pre5-libressl.patch,
+  +files/elinks-0.12_pre5-rand-egd.patch,
+  +files/elinks-0.12_pre5-ruby-1.9.patch,
+  +files/elinks-0.12_pre5-sm185-jsval-fixes.patch,
+  +files/elinks-9999-parallel-make.patch, +files/elinks-openssl-1.1.0.patch,
+  +metadata.xml:
+  www-client/elinks: Support OpenSSL 1.1.0.

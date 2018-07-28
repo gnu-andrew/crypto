@@ -1,0 +1,30 @@
+--- a/configure.in.old	2018-07-24 14:14:52.547212047 +0100
++++ b/configure.in	2018-07-24 15:56:16.472055326 +0100
+@@ -1022,7 +1022,10 @@
+ 			else
+ 				LIBS="-lssl -lcrypto $LIBS_X"
+ 			fi
+-			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]], [[OpenSSL_add_all_algorithms()]])],[cf_result=yes],[cf_result=no])
++			AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]], [[OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS|OPENSSL_INIT_ADD_ALL_DIGESTS, NULL)]])],[cf_result=yes],[cf_result=no])
++			if test "$cf_result" != yes; then
++			        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]], [[OpenSSL_add_all_algorithms()]])],[cf_result=yes],[cf_result=no])
++			fi
+ 			if test "$cf_result" != yes; then
+ 				AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <openssl/ssl.h>]], [[SSLeay_add_ssl_algorithms()]])],[cf_result=yes],[cf_result=no])
+ 			fi
+--- a/src/network/ssl/ssl.c.old	2018-07-24 14:14:52.059219679 +0100
++++ b/src/network/ssl/ssl.c	2018-07-24 17:46:04.981023244 +0100
+@@ -61,8 +61,13 @@
+ 	}
+ #endif
+ 
++#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
++	OPENSSL_init_ssl(0, NULL);
++	context = SSL_CTX_new(TLS_client_method());
++#else
+ 	SSLeay_add_ssl_algorithms();
+ 	context = SSL_CTX_new(SSLv23_client_method());
++#endif
+ 	SSL_CTX_set_options(context, SSL_OP_ALL);
+ 	SSL_CTX_set_default_verify_paths(context);
+ }
