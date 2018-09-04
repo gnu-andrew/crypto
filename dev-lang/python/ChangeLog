@@ -1,0 +1,6 @@
+*python-3.7.0 (04 Sep 2018)
+
+  04 Sep 2018; Andrew John Hughes <gnu_andrew@member.fsf.org> +files/pydoc.conf,
+  +files/pydoc.init, +files/python-openssl-1.1.0.patch, +metadata.xml,
+  +python-3.7.0.ebuild:
+  dev-lang/python: Support OpenSSL 1.1.0.
