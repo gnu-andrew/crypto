@@ -1,11 +1,11 @@
-# Copyright 1999-2018 Gentoo Foundation
+# Copyright 1999-2018 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="6"
+EAPI="7"
 
-inherit autotools flag-o-matic readme.gentoo-r1 systemd versionator user
+inherit flag-o-matic readme.gentoo-r1 systemd user
 
-MY_PV="$(replace_version_separator 4 -)"
+MY_PV="$(ver_rs 4 -)"
 MY_PF="${PN}-${MY_PV}"
 DESCRIPTION="Anonymizing overlay network for TCP"
 HOMEPAGE="http://www.torproject.org/"
@@ -16,12 +16,13 @@ S="${WORKDIR}/${MY_PF}"
 LICENSE="BSD GPL-2"
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE="libressl lzma scrypt seccomp selinux systemd tor-hardening test web zstd"
+IUSE="caps libressl lzma scrypt seccomp selinux systemd tor-hardening test web zstd"
 
 DEPEND="
 	app-text/asciidoc
 	dev-libs/libevent[ssl]
 	sys-libs/zlib
+	caps? ( sys-libs/libcap )
 	!libressl? ( dev-libs/openssl:0=[-bindist] )
 	libressl? ( dev-libs/libressl:0= )
 	lzma? ( app-arch/xz-utils )
@@ -34,9 +35,7 @@ RDEPEND="${DEPEND}
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-0.2.7.4-torrc.sample.patch
-	"${FILESDIR}"/${PN}-pid.patch
-	"${FILESDIR}"/${PN}-openssl-1.1.0.patch
-	"${FILESDIR}"/${PN}-openssl-1.1.0-configure.patch
+	"${FILESDIR}"/${PN}-0.3.3.2-alpha-tor.service.in.patch
 )
 
 DOCS=( README ChangeLog ReleaseNotes doc/HACKING )
@@ -46,18 +45,18 @@ pkg_setup() {
 	enewuser tor -1 -1 /var/lib/tor tor
 }
 
-src_prepare() {
-	default
-	eautoreconf
-}
-
 src_configure() {
+	export ac_cv_lib_cap_cap_init=$(usex caps)
 	econf \
 		--localstatedir="${EPREFIX}/var" \
 		--enable-system-torrc \
 		--enable-asciidoc \
+		--disable-android \
 		--disable-libfuzzer \
+		--disable-module-dirauth \
 		--disable-rust \
+		--disable-restart-debugging \
+		--disable-zstd-advanced-apis  \
 		$(use_enable lzma) \
 		$(use_enable scrypt libscrypt) \
 		$(use_enable seccomp) \
@@ -82,11 +81,6 @@ src_install() {
 
 	fperms 750 /var/lib/tor
 	fowners tor:tor /var/lib/tor
-
-	keepdir /var/run/tor
-
-	fperms 750 /var/run/tor
-	fowners tor:tor /var/run/tor
 
 	insinto /etc/tor/
 	newins "${FILESDIR}"/torrc-r1 torrc
