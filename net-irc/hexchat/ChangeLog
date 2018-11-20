@@ -1,0 +1,5 @@
+*hexchat-2.14.2 (20 Nov 2018)
+
+  20 Nov 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/hexchat-openssl-1.1.0.patch, +hexchat-2.14.2.ebuild, +metadata.xml:
+  net-irc/hexchat: Support OpenSSL 1.1.0.
