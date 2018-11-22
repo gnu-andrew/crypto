@@ -1,0 +1,40 @@
+--- a/src/node_crypto.h.old	2018-11-15 20:41:03.000000000 +0000
++++ b/src/node_crypto.h	2018-11-20 04:17:43.417788351 +0000
+@@ -37,6 +37,9 @@
+ #include "v8.h"
+ 
+ #include <openssl/ssl.h>
++#include <openssl/bn.h>
++#include <openssl/dh.h>
++#include <openssl/dsa.h>
+ #include <openssl/ec.h>
+ #include <openssl/ecdh.h>
+ #ifndef OPENSSL_NO_ENGINE
+@@ -47,12 +50,27 @@
+ // TODO(shigeki) Remove this after upgrading to 1.1.1
+ #include <openssl/obj_mac.h>
+ #include <openssl/pem.h>
++#include <openssl/rsa.h>
+ #include <openssl/x509.h>
+ #include <openssl/x509v3.h>
+ #include <openssl/hmac.h>
+ #include <openssl/rand.h>
+ #include <openssl/pkcs12.h>
+ 
++#if OPENSSL_API_COMPAT >= 0x10100000L
++#define X509_get_notBefore X509_getm_notBefore
++#define X509_get_notAfter X509_getm_notAfter
++#define SSL_library_init() OPENSSL_init_ssl(0, NULL)
++#define OPENSSL_no_config() \
++    OPENSSL_init_crypto(OPENSSL_INIT_NO_LOAD_CONFIG, NULL)
++#define SSL_load_error_strings()		   \
++    OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS \
++                     | OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL)
++#define OpenSSL_add_all_algorithms() \
++    OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS \
++                        | OPENSSL_INIT_ADD_ALL_DIGESTS, NULL)
++#endif
++
+ namespace node {
+ namespace crypto {
+ 
