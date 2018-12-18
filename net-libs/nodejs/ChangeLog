@@ -1,3 +1,11 @@
+*nodejs-11.4.0 (18 Dec 2018)
+
+  18 Dec 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/nodejs-11.3.0-openssl-compat.patch, +files/nodejs-11.4.0-llhttp.patch,
+  +files/nodejs-11.4.0-stdarg_h.patch, +nodejs-11.4.0.ebuild,
+  -nodejs-11.2.0.ebuild:
+  net-libs/nodejs: Update to nodejs 11.4.0 with OpenSSL 1.1.1 patch.
+
 *nodejs-11.2.0 (22 Nov 2018)
 
   22 Nov 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>

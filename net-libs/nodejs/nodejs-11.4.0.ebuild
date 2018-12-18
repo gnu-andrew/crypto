@@ -23,7 +23,8 @@ REQUIRED_USE="
 "
 
 RDEPEND="
-	>=dev-libs/libuv-1.23.2:=
+	>=dev-libs/libuv-1.24.0:=
+	>=net-dns/c-ares-1.15.0
 	>=net-libs/http-parser-2.8.0:=
 	>=net-libs/nghttp2-1.34.0
 	sys-libs/zlib
@@ -39,7 +40,10 @@ DEPEND="
 S="${WORKDIR}/node-v${PV}"
 PATCHES=(
 	"${FILESDIR}"/${PN}-10.3.0-global-npm-config.patch
+	"${FILESDIR}"/${PN}-11.4.0-llhttp.patch
+	"${FILESDIR}"/${PN}-11.4.0-stdarg_h.patch
 	"${FILESDIR}"/${PN}-openssl-1.1.0.patch
+	"${FILESDIR}"/${PN}-11.3.0-openssl-compat.patch
 )
 
 pkg_pretend() {
@@ -93,7 +97,7 @@ src_prepare() {
 }
 
 src_configure() {
-	local myconf=( --shared-http-parser --shared-libuv --shared-nghttp2 --shared-zlib )
+	local myconf=( --shared-cares --shared-http-parser --shared-libuv --shared-nghttp2 --shared-zlib )
 	use debug && myconf+=( --debug )
 	use icu && myconf+=( --with-intl=system-icu ) || myconf+=( --with-intl=none )
 	use inspector || myconf+=( --without-inspector )
