@@ -1,4 +1,4 @@
-# Copyright 1999-2018 Gentoo Foundation
+# Copyright 1999-2018 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="6"
@@ -12,8 +12,9 @@ SRC_URI="mirror://openssl/source/${MY_P}.tar.gz"
 
 LICENSE="openssl"
 SLOT="0/1.1" # .so version of libssl/libcrypto
+[[ "${PV}" = *_pre* ]] || \
 KEYWORDS="~amd64"
-IUSE="+asm bindist +camellia elibc_musl idea mdc2 rc5 rfc3779 sctp cpu_flags_x86_sse2 static-libs test tls-heartbeat vanilla zlib"
+IUSE="+asm bindist +camellia elibc_musl idea mdc2 rc5 rfc3779 sctp cpu_flags_x86_sse2 sslv3 static-libs test tls-heartbeat vanilla zlib"
 RESTRICT="!bindist? ( bindist )"
 
 RDEPEND=">=app-misc/c_rehash-1.7-r1
@@ -33,13 +34,12 @@ PDEPEND="app-misc/ca-certificates"
 SOURCE1=hobble-openssl
 SOURCE12=ec_curve.c
 SOURCE13=ectest.c
-PATCH1=openssl-1.1.0-build.patch # Fixes EVP testcase for EC
-PATCH37=openssl-1.1.0-ec-curves.patch
+PATCH37=openssl-1.1.1-ec-curves.patch
 FEDORA_GIT_BASE='https://src.fedoraproject.org/cgit/rpms/openssl.git/plain/'
-FEDORA_GIT_BRANCH='f27'
+FEDORA_GIT_BRANCH='f29'
 FEDORA_SRC_URI=()
-FEDORA_SOURCE=( $SOURCE1 $SOURCE12 $SOURCE13 )
-FEDORA_PATCH=( $PATCH1 $PATCH37 )
+FEDORA_SOURCE=( ${SOURCE1} ${SOURCE12} ${SOURCE13} )
+FEDORA_PATCH=( ${PATCH37} )
 for i in "${FEDORA_SOURCE[@]}" ; do
 	FEDORA_SRC_URI+=( "${FEDORA_GIT_BASE}/${i}?h=${FEDORA_GIT_BRANCH} -> ${P}_${i}" )
 done
@@ -52,11 +52,6 @@ S="${WORKDIR}/${MY_P}"
 
 MULTILIB_WRAPPED_HEADERS=(
 	usr/include/openssl/opensslconf.h
-)
-
-PATCHES=(
-	"${FILESDIR}"/${PN}-1.0.2a-x32-asm.patch #542618
-	"${FILESDIR}"/${P}-CVE-2018-0737.patch
 )
 
 src_prepare() {
@@ -77,6 +72,7 @@ src_prepare() {
 		# $(use_ssl !bindist ec2m) \
 
 	fi
+
 	# keep this in sync with app-misc/c_rehash
 	SSL_CNF_DIR="/etc/ssl"
 
@@ -85,7 +81,9 @@ src_prepare() {
 	rm -f Makefile
 
 	if ! use vanilla ; then
-		eapply "${PATCHES[@]}"
+		if [[ $(declare -p PATCHES 2>/dev/null) == "declare -a"* ]] ; then
+			[[ ${#PATCHES[@]} -gt 0 ]] && eapply "${PATCHES[@]}"
+		fi
 	fi
 
 	eapply_user #332661
@@ -98,13 +96,10 @@ src_prepare() {
 		-e '/^MAKEDEPPROG/s:=.*:=$(CC):' \
 		-e $(has noman FEATURES \
 			&& echo '/^install:/s:install_docs::' \
-			|| echo '/^MANDIR=/s:=.*:='${EPREFIX}'/usr/share/man:') \
-		-e "/^DOCDIR/s@\$(BASENAME)@&-${PF}@" \
+			|| echo '/^MANDIR=/s:=.*:='${EPREFIX%/}'/usr/share/man:') \
+		-e "/^DOCDIR/s@\$(BASENAME)@&-${PVR}@" \
 		Configurations/unix-Makefile.tmpl \
 		|| die
-
-	# show the actual commands in the log
-	sed -i '/^SET_X/s@=.*@=set -x@' Makefile.shared || die
 
 	# quiet out unknown driver argument warnings since openssl
 	# doesn't have well-split CFLAGS and we're making it even worse
@@ -121,7 +116,7 @@ src_prepare() {
 
 	# Prefixify Configure shebang (#141906)
 	sed \
-		-e "1s,/usr/bin/env,${EPREFIX}&," \
+		-e "1s,/usr/bin/env,${EPREFIX%/}&," \
 		-i Configure || die
 	# Remove test target when FEATURES=test isn't set
 	if ! use test ; then
@@ -173,28 +168,32 @@ multilib_src_configure() {
 
 	# Fedora hobbled-EC needs 'no-ec2m'
 	# 'srp' was restricted until early 2017 as well.
+	# "disable-deprecated" option breaks too many consumers.
+	# Don't set it without thorough revdeps testing.
 	echoit \
 	./${config} \
 		${sslout} \
 		--api=1.0.0 \
 		$(use cpu_flags_x86_sse2 || echo "no-sse2") \
 		disable-deprecated \
-		${ec_nistp_64_gcc_128} \
-		$(use_ssl asm) \
 		$(use_ssl camellia) \
 		enable-ec \
 		$(use_ssl !bindist ec2m) \
 		enable-srp \
 		$(use elibc_musl && echo "no-async") \
+		${ec_nistp_64_gcc_128} \
 		$(use_ssl idea) \
 		$(use_ssl mdc2) \
 		$(use_ssl rc5) \
+		$(use_ssl sslv3 ssl3) \
+		$(use_ssl sslv3 ssl3-method) \
+		$(use_ssl asm) \
 		$(use_ssl rfc3779) \
 		$(use_ssl sctp) \
 		$(use_ssl tls-heartbeat heartbeats) \
 		$(use_ssl zlib) \
-		--prefix="${EPREFIX}"/usr \
-		--openssldir="${EPREFIX}"${SSL_CNF_DIR} \
+		--prefix="${EPREFIX%/}"/usr \
+		--openssldir="${EPREFIX%/}"${SSL_CNF_DIR} \
 		--libdir=$(get_libdir) \
 		shared threads \
 		|| die
@@ -228,7 +227,13 @@ multilib_src_test() {
 }
 
 multilib_src_install() {
-	emake DESTDIR="${D}" install
+	# We need to create $ED/usr on our own to avoid a race condition #665130
+	if [[ ! -d "${ED%/}/usr" ]]; then
+		# We can only create this directory once
+		mkdir "${ED%/}"/usr || die
+	fi
+
+	emake DESTDIR="${D%/}" install
 }
 
 multilib_src_install_all() {
