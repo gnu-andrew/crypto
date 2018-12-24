@@ -1,0 +1,48 @@
+--- a/tcp.c.old	2013-08-29 15:27:25.000000000 +0100
++++ b/tcp.c	2018-12-18 03:14:43.737287806 +0000
+@@ -302,21 +302,35 @@
+ 
+ 	if (!g_ssl_initialized)
+ 	{
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 		SSL_load_error_strings();
+ 		SSL_library_init();
++#else
++		OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS |
++				 OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
++#endif
+ 		g_ssl_initialized = True;
+ 	}
+ 
+ 	/* create process context */
+ 	if (g_ssl_ctx == NULL)
+ 	{
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 		g_ssl_ctx = SSL_CTX_new(TLSv1_client_method());
++#else
++		g_ssl_ctx = SSL_CTX_new(TLS_client_method());
++#endif
+ 		if (g_ssl_ctx == NULL)
+ 		{
+ 			error("tcp_tls_connect: SSL_CTX_new() failed to create TLS v1.0 context\n");
+ 			goto fail;
+ 		}
+ 
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
++		SSL_CTX_set_min_proto_version(g_ssl_ctx, TLS1_VERSION);
++		SSL_CTX_set_max_proto_version(g_ssl_ctx, TLS1_VERSION);
++#endif
++
+ 		options = 0;
+ #ifdef SSL_OP_NO_COMPRESSION
+ 		options |= SSL_OP_NO_COMPRESSION;
+--- a/ssl.h.old	2012-10-23 12:38:27.000000000 +0100
++++ b/ssl.h	2018-12-18 02:54:13.232574521 +0000
+@@ -27,6 +27,7 @@
+ #include <openssl/bn.h>
+ #include <openssl/x509v3.h>
+ #include <openssl/hmac.h>
++#include <openssl/rsa.h>
+ 
+ #if defined(OPENSSL_VERSION_NUMBER) && (OPENSSL_VERSION_NUMBER >= 0x0090800f)
+ #define D2I_X509_CONST const
