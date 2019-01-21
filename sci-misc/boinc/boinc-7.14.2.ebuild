@@ -1,44 +1,46 @@
-# Copyright 1999-2018 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
 
 WX_GTK_VER=3.0-gtk3
 
-inherit autotools eutils gnome2-utils linux-info systemd user versionator wxwidgets
-
-MY_PV=$(get_version_component_range 1-2)
+inherit autotools gnome2-utils linux-info systemd user wxwidgets
 
 DESCRIPTION="The Berkeley Open Infrastructure for Network Computing"
-HOMEPAGE="http://boinc.ssl.berkeley.edu/"
-SRC_URI="https://github.com/BOINC/boinc/archive/client_release/${MY_PV}/${PV}.tar.gz -> ${P}.tar.gz
-	X? ( http://boinc.berkeley.edu/logo/boinc_glossy2_512_F.tif -> ${PN}.tif )"
-RESTRICT="mirror"
+HOMEPAGE="https://boinc.ssl.berkeley.edu/"
+
+SRC_URI="X? ( https://boinc.berkeley.edu/logo/boinc_glossy2_512_F.tif -> ${PN}.tif )"
+if [[ ${PV} == *9999 ]] ; then
+	EGIT_REPO_URI="https://github.com/BOINC/${PN}.git"
+	inherit git-r3
+else
+	MY_PV="7.14"
+	SRC_URI+=" https://github.com/BOINC/boinc/archive/client_release/${MY_PV}/${PV}.tar.gz -> ${P}.tar.gz"
+	KEYWORDS="~amd64"
+	S="${WORKDIR}/${PN}-client_release-${MY_PV}-${PV}"
+fi
 
 LICENSE="LGPL-2.1"
 SLOT="0"
-KEYWORDS="~amd64 ~ia64 ~ppc ~ppc64 ~sparc ~x86"
-IUSE="X cuda curl_ssl_gnutls curl_ssl_libressl +curl_ssl_openssl static-libs"
+IUSE="X cuda curl_ssl_gnutls curl_ssl_libressl +curl_ssl_openssl"
 
 REQUIRED_USE="^^ ( curl_ssl_gnutls curl_ssl_libressl curl_ssl_openssl ) "
 
 # libcurl must not be using an ssl backend boinc does not support.
 # If the libcurl ssl backend changes, boinc should be recompiled.
-RDEPEND="
-	!sci-misc/boinc-bin
-	!app-admin/quickswitch
+COMMON_DEPEND="
 	>=app-misc/ca-certificates-20080809
-	net-misc/curl[curl_ssl_gnutls(-)=,curl_ssl_libressl(-)=,-curl_ssl_nss(-),curl_ssl_openssl(-)=,-curl_ssl_axtls(-),-curl_ssl_cyassl(-)]
-	sys-apps/util-linux
-	sys-libs/zlib
 	cuda? (
 		>=dev-util/nvidia-cuda-toolkit-2.1
 		>=x11-drivers/nvidia-drivers-180.22
 	)
+	net-misc/curl[curl_ssl_gnutls(-)=,curl_ssl_libressl(-)=,-curl_ssl_nss(-),curl_ssl_openssl(-)=,-curl_ssl_axtls(-),-curl_ssl_cyassl(-)]
+	sys-apps/util-linux
+	sys-libs/zlib
 	X? (
 		dev-db/sqlite:3
 		media-libs/freeglut
-		sys-libs/glibc:2.2
 		virtual/jpeg:0=
 		x11-libs/gtk+:3
 		>=x11-libs/libnotify-0.7
@@ -46,22 +48,21 @@ RDEPEND="
 	)
 "
 DEPEND="${RDEPEND}
-	sys-devel/gettext
 	app-text/docbook-xml-dtd:4.4
 	app-text/docbook2X
+	sys-devel/gettext
 	X? ( virtual/imagemagick-tools[png,tiff] )
+"
+RDEPEND="${COMMON_DEPEND}
+	!app-admin/quickswitch
 "
 
 PATCHES=(
 	# >=x11-libs/wxGTK-3.0.2.0-r3 has webview removed, bug 587462
 	"${FILESDIR}"/fix_webview.patch
-	# xlocale.h was removed in modern glibc, bug 639108
-	"${FILESDIR}"/fix_xlocale.patch
 	# Build against OpenSSL 1.1.0
 	"${FILESDIR}"/${PN}-openssl-1.1.0.patch
 )
-
-S="${WORKDIR}/${PN}-client_release-${MY_PV}-${PV}"
 
 pkg_setup() {
 	# Bug 578750
@@ -130,11 +131,11 @@ src_install() {
 
 	# cleanup cruft
 	rm -rf "${ED%/}"/etc || die "rm failed"
+	find "${D}" -name '*.la' -delete || die "Removing .la files failed"
 
 	sed -e "s/@libdir@/$(get_libdir)/" "${FILESDIR}"/${PN}.init.in > ${PN}.init || die
 	newinitd ${PN}.init ${PN}
 	newconfd "${FILESDIR}"/${PN}.conf ${PN}
-	systemd_dounit "${FILESDIR}"/${PN}.service
 }
 
 pkg_preinst() {
@@ -144,9 +145,7 @@ pkg_preinst() {
 	# note this works only for first install so we have to
 	# elog user about the need of being in video group
 	local groups="${PN}"
-	if use cuda; then
-		groups+=",video"
-	fi
+	groups+=",video"
 	enewuser ${PN} -1 -1 /var/lib/${PN} "${groups}"
 }
 
@@ -174,12 +173,10 @@ pkg_postinst() {
 		elog "Remember to launch init script before using manager. Or changing the password."
 		elog
 	fi
-	if use cuda; then
-		elog "To be able to use CUDA you should add boinc user to video group."
-		elog "Run as root:"
-		elog "gpasswd -a boinc video"
-		elog
-	fi
+	elog "To be able to use CUDA or OpenCL you should add the boinc user to the video group."
+	elog "Run as root:"
+	elog "gpasswd -a boinc video"
+	elog
 	# Add information about BOINC supporting OpenCL
 	elog "BOINC supports OpenCL. To use it you have to eselect"
 	if use cuda; then
