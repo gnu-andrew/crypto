@@ -1,0 +1,7 @@
+*ffmpeg-4.1 (18 Feb 2019)
+
+  18 Feb 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +ffmpeg-4.1.ebuild, +files/chromium-r1.patch,
+  +files/ffmpeg-4.1-vaapi-tools.patch, +files/ffmpeg-openssl-1.1.0.patch,
+  +metadata.xml:
+  media-video/ffmpeg: Support OpenSSL 1.1.0.
