@@ -1,6 +1,6 @@
---- entropy.c.old	2017-03-20 02:39:27.000000000 +0000
-+++ entropy.c	2017-09-05 01:13:20.883346928 +0100
-@@ -213,9 +213,9 @@
+--- entropy.c.old	2018-10-17 01:01:20.000000000 +0100
++++ entropy.c	2019-03-07 01:49:00.334529157 +0000
+@@ -219,9 +219,9 @@
  #ifndef OPENSSL_PRNG_ONLY
  	unsigned char buf[RANDOM_SEED_SIZE];
  #endif
@@ -12,60 +12,9 @@
  
  #ifndef OPENSSL_PRNG_ONLY
  	if (RAND_status() == 1) {
---- ssh.c.old	2017-09-04 19:47:29.583888870 +0100
-+++ ssh.c	2017-09-05 01:17:21.919485207 +0100
-@@ -768,7 +768,7 @@
- 			fprintf(stderr, "%s, %s\n",
- 			    SSH_RELEASE,
- #ifdef WITH_OPENSSL
--			    SSLeay_version(SSLEAY_VERSION)
-+			    OpenSSL_version(OPENSSL_VERSION)
- #else
- 			    "without OpenSSL"
- #endif
-@@ -980,9 +980,9 @@
- #ifdef WITH_OPENSSL
- #if OPENSSL_VERSION_NUMBER < 0x10100000L
- 	OpenSSL_add_all_algorithms();
--#endif
- 	ERR_load_crypto_strings();
- #endif
-+#endif
- 
- 	/* Initialize the command to execute on remote host. */
- 	buffer_init(&command);
-@@ -1029,7 +1029,7 @@
- 	if (debug_flag)
- 		logit("%s, %s", SSH_RELEASE,
- #ifdef WITH_OPENSSL
--		    SSLeay_version(SSLEAY_VERSION)
-+		    OpenSSL_version(OPENSSL_VERSION)
- #else
- 		    "without OpenSSL"
- #endif
---- sshd.c.old	2017-09-04 19:47:28.423907495 +0100
-+++ sshd.c	2017-09-05 01:18:01.422852354 +0100
-@@ -907,7 +907,7 @@
- 	fprintf(stderr, "%s, %s\n",
- 	    SSH_RELEASE,
- #ifdef WITH_OPENSSL
--	    SSLeay_version(SSLEAY_VERSION)
-+	    OpenSSL_version(OPENSSL_VERSION)
- #else
- 	    "without OpenSSL"
- #endif
-@@ -1778,7 +1778,7 @@
- 
- 	debug("sshd version %s, %s", SSH_VERSION,
- #ifdef WITH_OPENSSL
--	    SSLeay_version(SSLEAY_VERSION)
-+	    OpenSSL_version(OPENSSL_VERSION)
- #else
- 	    "without OpenSSL"
- #endif
---- ssh-keysign.c.old	2017-03-20 02:39:27.000000000 +0000
-+++ ssh-keysign.c	2017-09-05 01:21:39.003366884 +0100
-@@ -229,7 +229,9 @@
+--- ssh-keysign.c.old	2018-10-17 01:01:20.000000000 +0100
++++ ssh-keysign.c	2019-03-07 01:49:00.334529157 +0000
+@@ -224,7 +224,9 @@
  		fatal("could not open any host key");
  
  #ifdef WITH_OPENSSL
@@ -75,8 +24,70 @@
  	arc4random_buf(rnd, sizeof(rnd));
  	RAND_seed(rnd, sizeof(rnd));
  #endif
---- ssh_api.c.old	2017-03-20 02:39:27.000000000 +0000
-+++ ssh_api.c	2017-09-05 01:22:45.938300308 +0100
+--- ssh.c.old	2018-10-17 01:01:20.000000000 +0100
++++ ssh.c	2019-03-07 01:49:13.830318711 +0000
+@@ -816,7 +816,7 @@
+ 			fprintf(stderr, "%s, %s\n",
+ 			    SSH_RELEASE,
+ #ifdef WITH_OPENSSL
+-			    SSLeay_version(SSLEAY_VERSION)
++			    OpenSSL_version(OPENSSL_VERSION)
+ #else
+ 			    "without OpenSSL"
+ #endif
+@@ -1037,8 +1037,21 @@
+ 	host_arg = xstrdup(host);
+ 
+ #ifdef WITH_OPENSSL
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+ 	OpenSSL_add_all_algorithms();
+ 	ERR_load_crypto_strings();
++#else
++#ifdef OPENSSL_LOAD_CONF
++	OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS |
++			    OPENSSL_INIT_ADD_ALL_DIGESTS |
++			    OPENSSL_INIT_LOAD_CONFIG |
++			    OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
++#else
++	OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS |
++			    OPENSSL_INIT_ADD_ALL_DIGESTS |
++			    OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
++#endif
++#endif
+ #endif
+ 
+ 	/* Initialize the command to execute on remote host. */
+@@ -1085,7 +1098,7 @@
+ 	if (debug_flag)
+ 		logit("%s, %s", SSH_RELEASE,
+ #ifdef WITH_OPENSSL
+-		    SSLeay_version(SSLEAY_VERSION)
++		    OpenSSL_version(OPENSSL_VERSION)
+ #else
+ 		    "without OpenSSL"
+ #endif
+--- sshd.c.old	2018-10-17 01:01:20.000000000 +0100
++++ sshd.c	2019-03-07 01:49:00.334529157 +0000
+@@ -917,7 +917,7 @@
+ 	fprintf(stderr, "%s, %s\n",
+ 	    SSH_RELEASE,
+ #ifdef WITH_OPENSSL
+-	    SSLeay_version(SSLEAY_VERSION)
++	    OpenSSL_version(OPENSSL_VERSION)
+ #else
+ 	    "without OpenSSL"
+ #endif
+@@ -1723,7 +1723,7 @@
+ 
+ 	debug("sshd version %s, %s", SSH_VERSION,
+ #ifdef WITH_OPENSSL
+-	    SSLeay_version(SSLEAY_VERSION)
++	    OpenSSL_version(OPENSSL_VERSION)
+ #else
+ 	    "without OpenSSL"
+ #endif
+--- ssh_api.c.old	2018-10-17 01:01:20.000000000 +0100
++++ ssh_api.c	2019-03-07 01:49:00.334529157 +0000
 @@ -80,7 +80,9 @@
  
  	if (!called) {
@@ -87,3 +98,15 @@
  #endif /* WITH_OPENSSL */
  		called = 1;
  	}
+--- openbsd-compat/openssl-compat.c.old	2019-03-07 01:50:31.733103943 +0000
++++ openbsd-compat/openssl-compat.c	2019-03-08 14:26:48.511367087 +0000
+@@ -70,7 +70,9 @@
+ void
+ ssh_OpenSSL_add_all_algorithms(void)
+ {
++#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+ 	OpenSSL_add_all_algorithms();
++#endif
+ 
+ 	/* Enable use of crypto hardware */
+ 	ENGINE_load_builtin_engines();

@@ -1,6 +1,31 @@
 # ChangeLog for net-misc/openssh
-# Copyright 1999-2017 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2019 Gentoo Authors; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/net-misc/openssh/ChangeLog,v 1.557 2015/03/25 21:06:03 vapier Exp $
+
+*openssh-7.9_p1-r1 (11 Mar 2019)
+
+  11 Mar 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/openssh-7.5_p1-disable-conch-interop-tests.patch,
+  +files/openssh-7.8_p1-GSSAPI-dns.patch,
+  +files/openssh-7.9_p1-X509-11.6-tests.patch,
+  +files/openssh-7.9_p1-X509-dont-make-piddir-11.6.patch,
+  +files/openssh-7.9_p1-X509-glue-11.6.patch,
+  +files/openssh-7.9_p1-hpn-X509-glue.patch,
+  +files/openssh-7.9_p1-hpn-glue.patch,
+  +files/openssh-7.9_p1-hpn-openssl-1.1.patch,
+  +files/openssh-7.9_p1-hpn-sctp-glue.patch,
+  +files/openssh-7.9_p1-include-stdlib.patch,
+  +files/openssh-7.9_p1-openssl-1.0.2-compat.patch, +files/sshd-r1.confd,
+  +files/sshd.initd, +openssh-7.9_p1-r1.ebuild,
+  -files/openssh-6.7_p1-sctp-x509-glue.patch,
+  -files/openssh-7.3_p1-GSSAPI-dns.patch,
+  -files/openssh-7.3_p1-hpn-x509-glue.patch,
+  -files/openssh-7.5_p1-GSSAPI-dns.patch,
+  -files/openssh-7.5_p1-openssl-1.1.0.patch,
+  -files/openssh-openssl-1.1.0-hpn.patch, -files/sshd.confd, -files/sshd.rc6.4,
+  -openssh-7.5_p1-r2.ebuild, files/openssh-openssl-1.1.0-versioning.patch,
+  metadata.xml:
+  net-misc/openssh: Update to 7.9_p1-r1.
 
 *openssh-7.5_p1-r2 (05 Sep 2017)
 
