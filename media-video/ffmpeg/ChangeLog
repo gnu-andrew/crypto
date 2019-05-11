@@ -1,3 +1,10 @@
+*ffmpeg-4.1.3 (11 May 2019)
+
+  11 May 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +ffmpeg-4.1.3.ebuild, -ffmpeg-4.1.ebuild, -files/ffmpeg-4.1-vaapi-tools.patch,
+  metadata.xml:
+  media-video/ffmpeg: Update to 4.1.3
+
 *ffmpeg-4.1 (18 Feb 2019)
 
   18 Feb 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
