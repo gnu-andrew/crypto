@@ -1,3 +1,11 @@
+*git-2.21.0-r2 (08 Jun 2019)
+
+  08 Jun 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/git-2.21.0-quiet-submodules-testcase.patch,
+  +files/git-2.21.0-quiet-submodules.patch, +git-2.21.0-r2.ebuild,
+  -files/git-2.5.1-freebsd-10.x-no-iconv.patch, -git-2.18.0.ebuild:
+  dev-vcs/git: Update to 2.21.0.
+
 *git-2.18.0 (28 Jul 2018)
 
   28 Jul 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>
