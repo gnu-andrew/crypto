@@ -1,7 +1,7 @@
 # Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=7
 
 KDE_QTHELP="false"
 VIRTUALX_REQUIRED="test"
@@ -9,9 +9,13 @@ inherit kde5
 
 DESCRIPTION="KHTML web rendering engine"
 LICENSE="LGPL-2"
-KEYWORDS="~amd64 ~arm ~arm64 ~x86"
+KEYWORDS="~amd64"
 IUSE="libressl X"
 
+BDEPEND="
+	dev-lang/perl
+	dev-util/gperf
+"
 RDEPEND="
 	$(add_frameworks_dep karchive)
 	$(add_frameworks_dep kcodecs)
@@ -53,16 +57,14 @@ RDEPEND="
 	)
 "
 DEPEND="${RDEPEND}
-	dev-lang/perl
-	dev-util/gperf
 	test? ( $(add_qt_dep qtx11extras) )
 	X? ( x11-base/xorg-proto )
 "
 
 src_prepare() {
-	default
+	kde5_src_prepare
 
-	epatch "${FILESDIR}"/"${PN}"-openssl-1.1.0.patch
+	eapply "${FILESDIR}"/"${PN}"-openssl-1.1.0.patch
 }
 
 src_configure() {

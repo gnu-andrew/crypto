@@ -1,3 +1,9 @@
+*khtml-5.58.0 (08 Jun 2019)
+
+  08 Jun 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +khtml-5.58.0.ebuild, -khtml-5.53.0.ebuild:
+  kde-frameworks/khtml: Update to 5.58.
+
 *khtml-5.53.0 (20 Feb 2019)
 
   20 Feb 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
