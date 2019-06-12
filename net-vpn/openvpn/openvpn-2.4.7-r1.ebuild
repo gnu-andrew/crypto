@@ -1,4 +1,4 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
@@ -6,19 +6,18 @@ EAPI=6
 inherit autotools flag-o-matic user systemd linux-info
 
 DESCRIPTION="Robust and highly flexible tunneling application compatible with many OSes"
-SRC_URI="http://swupdate.openvpn.net/community/releases/${P}.tar.gz
+SRC_URI="https://github.com/OpenVPN/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz
 	test? ( https://raw.githubusercontent.com/OpenVPN/${PN}/v${PV}/tests/unit_tests/${PN}/mock_msg.h )"
-HOMEPAGE="http://openvpn.net/"
+HOMEPAGE="https://openvpn.net/"
 
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64"
 
 IUSE="down-root examples inotify iproute2 libressl lz4 +lzo mbedtls pam"
-IUSE+=" pkcs11 +plugins polarssl selinux +ssl static systemd test userland_BSD"
+IUSE+=" pkcs11 +plugins selinux +ssl static systemd test userland_BSD"
 
 REQUIRED_USE="static? ( !plugins !pkcs11 )
-	mbedtls? ( ssl !libressl )
 	pkcs11? ( ssl )
 	!plugins? ( !pam !down-root )
 	inotify? ( plugins )"
@@ -26,13 +25,13 @@ REQUIRED_USE="static? ( !plugins !pkcs11 )
 CDEPEND="
 	kernel_linux? (
 		iproute2? ( sys-apps/iproute2[-minimal] )
-		!iproute2? ( sys-apps/net-tools )
+		!iproute2? ( >=sys-apps/net-tools-1.60_p20160215155418 )
 	)
 	pam? ( virtual/pam )
 	ssl? (
 		!mbedtls? (
-			!libressl? ( >=dev-libs/openssl-0.9.8:* )
-			libressl? ( dev-libs/libressl )
+			!libressl? ( >=dev-libs/openssl-0.9.8:0= )
+			libressl? ( dev-libs/libressl:0= )
 		)
 		mbedtls? ( net-libs/mbedtls )
 	)
@@ -49,7 +48,9 @@ CONFIG_CHECK="~TUN"
 
 PATCHES=(
 	"${FILESDIR}/${PN}-external-cmocka.patch"
-	"${FILESDIR}/${PN}-no_des.patch"
+	"${FILESDIR}/${PN}-2.4.5-libressl-macro-fix.patch"
+	"${FILESDIR}/${P}-libressl.patch"
+	"${FILESDIR}/${PN}-openssl-1.1.0.patch"
 )
 
 pkg_setup()  {
@@ -67,10 +68,14 @@ src_prepare() {
 
 src_configure() {
 	use static && append-ldflags -Xcompiler -static
+	SYSTEMD_UNIT_DIR=$(systemd_get_systemunitdir) \
+	TMPFILES_DIR="/usr/lib/tmpfiles.d" \
+	IFCONFIG=/bin/ifconfig \
+	ROUTE=/bin/route \
 	econf \
-		$(usex mbedtls '--with-crypto-library=mbedtls' '') \
 		$(use_enable inotify async-push) \
 		$(use_enable ssl crypto) \
+		$(use_with ssl crypto-library $(usex mbedtls mbedtls openssl)) \
 		$(use_enable lz4) \
 		$(use_enable lzo) \
 		$(use_enable pkcs11) \
@@ -111,10 +116,6 @@ src_install() {
 		insinto /usr/share/doc/${PF}/examples
 		doins -r sample contrib
 	fi
-
-	systemd_newtmpfilesd "${FILESDIR}"/${PN}.tmpfile ${PN}.conf
-	use systemd && systemd_newunit distro/systemd/openvpn-client@.service openvpn-client@.service
-	use systemd && systemd_newunit distro/systemd/openvpn-server@.service openvpn-server@.service
 }
 
 pkg_postinst() {
@@ -124,9 +125,9 @@ pkg_postinst() {
 	enewgroup openvpn
 	enewuser openvpn "" "" "" openvpn
 
-	if [ path_exists -o "${ROOT}/etc/openvpn/*/local.conf" ] ; then
-		ewarn "WARNING: The openvpn init script has changed"
-		ewarn ""
+	if use x64-macos; then
+		elog "You might want to install tuntaposx for TAP interface support:"
+		elog "http://tuntaposx.sourceforge.net"
 	fi
 
 	elog "The openvpn init script expects to find the configuration file"

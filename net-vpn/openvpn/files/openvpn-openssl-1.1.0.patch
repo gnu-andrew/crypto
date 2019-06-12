@@ -1,0 +1,110 @@
+--- a/src/openvpn/crypto_openssl.c.old	2019-02-18 17:55:36.000000000 +0000
++++ b/src/openvpn/crypto_openssl.c	2019-06-11 21:19:27.687308561 +0100
+@@ -50,6 +50,11 @@
+ #include <openssl/rand.h>
+ #include <openssl/ssl.h>
+ 
++#if OPENSSL_API_COMPAT >= 0x10100000L
++#define EVP_CIPHER_CTX_init EVP_CIPHER_CTX_reset
++#define EVP_CIPHER_CTX_cleanup EVP_CIPHER_CTX_reset
++#endif
++
+ /*
+  * Check for key size creepage.
+  */
+--- a/src/openvpn/ssl_openssl.c.old	2019-06-11 20:40:33.695554577 +0100
++++ b/src/openvpn/ssl_openssl.c	2019-06-11 21:13:54.468485499 +0100
+@@ -52,6 +52,10 @@
+ 
+ #include "ssl_verify_openssl.h"
+ 
++#include <openssl/dsa.h>
++#include <openssl/rsa.h>
++#include <openssl/bn.h>
++#include <openssl/dh.h>
+ #include <openssl/err.h>
+ #include <openssl/pkcs12.h>
+ #include <openssl/x509.h>
+@@ -60,6 +64,11 @@
+ #include <openssl/ec.h>
+ #endif
+ 
++#if OPENSSL_API_COMPAT >= 0x10100000L
++#define X509_get_notBefore X509_get0_notBefore
++#define X509_get_notAfter X509_get0_notAfter
++#endif
++
+ /*
+  * Allocate space in SSL objects in which to store a struct tls_session
+  * pointer back to parent.
+@@ -71,12 +80,23 @@
+ void
+ tls_init_lib(void)
+ {
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+     SSL_library_init();
+ #ifndef ENABLE_SMALL
+     SSL_load_error_strings();
+ #endif
+     OpenSSL_add_all_algorithms();
+-
++#else
++#ifndef ENABLE_SMALL
++    OPENSSL_init_ssl(OPENSSL_INIT_ADD_ALL_CIPHERS |
++		     OPENSSL_INIT_ADD_ALL_DIGESTS |
++		     OPENSSL_INIT_LOAD_SSL_STRINGS |
++		     OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
++#else
++    OPENSSL_init_ssl(OPENSSL_INIT_ADD_ALL_CIPHERS |
++		     OPENSSL_INIT_ADD_ALL_DIGESTS, NULL);
++#endif
++#endif
+     mydata_index = SSL_get_ex_new_index(0, "struct session *", NULL, NULL, NULL);
+     ASSERT(mydata_index >= 0);
+ }
+@@ -84,10 +104,12 @@
+ void
+ tls_free_lib(void)
+ {
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+     EVP_cleanup();
+ #ifndef ENABLE_SMALL
+     ERR_free_strings();
+ #endif
++#endif
+ }
+ 
+ void
+@@ -625,7 +647,9 @@
+     }
+     else
+     {
+-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
++#if OPENSSL_VERSION_NUMBER >= 0x10100000L
++	/* OpenSSL 1.1.0 and newer automatically enable ECDH support */
++#elif OPENSSL_VERSION_NUMBER >= 0x10002000L
+         /* OpenSSL 1.0.2 and newer can automatically handle ECDH parameter
+          * loading */
+         SSL_CTX_set_ecdh_auto(ctx->ctx, 1);
+@@ -1971,7 +1995,11 @@
+ const char *
+ get_ssl_library_version(void)
+ {
++#if OPENSSL_VERSION_NUMBER < 0x10100000L
+     return SSLeay_version(SSLEAY_VERSION);
++#else
++    return OpenSSL_version(OPENSSL_VERSION);
++#endif
+ }
+ 
+ #endif /* defined(ENABLE_CRYPTO) && defined(ENABLE_CRYPTO_OPENSSL) */
+--- a/src/openvpn/ssl_verify_openssl.c.old	2019-02-18 17:55:36.000000000 +0000
++++ b/src/openvpn/ssl_verify_openssl.c	2019-06-11 22:02:25.219242716 +0100
+@@ -46,6 +46,7 @@
+ 
+ #include <openssl/x509v3.h>
+ #include <openssl/err.h>
++#include <openssl/bn.h>
+ 
+ int
+ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
