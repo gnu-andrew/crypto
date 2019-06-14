@@ -1,6 +1,14 @@
 # ChangeLog for net-analyzer/net-snmp
-# Copyright 1999-2015 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2019 Gentoo Authors; Distributed under the GPL v2
 # $Header: /var/cvsroot/gentoo-x86/net-analyzer/net-snmp/ChangeLog,v 1.308 2015/04/08 18:01:22 mgorny Exp $
+
+*net-snmp-5.8-r1 (14 Jun 2019)
+
+  14 Jun 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/net-snmp-5.7.3-include-limits.patch, +files/net-snmp-5.8-tinfo.patch,
+  +files/net-snmp-openssl-1.1.0.patch, +net-snmp-5.8-r1.ebuild,
+  -files/net-snmp-no_des.patch, -net-snmp-5.7.3_pre5-r3.ebuild, metadata.xml:
+  net-analyzer/net-snmp: Support OpenSSL 1.1.0.
 
   08 Apr 2015; Michał Górny <mgorny@gentoo.org> net-snmp-5.7.3_pre5-r1.ebuild,
   net-snmp-5.7.3_pre5-r2.ebuild, net-snmp-5.7.3_pre5-r3.ebuild:

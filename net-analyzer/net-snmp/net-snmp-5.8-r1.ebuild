@@ -1,34 +1,36 @@
-# Copyright 1999-2015 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/net-analyzer/net-snmp/net-snmp-5.7.3_pre5-r3.ebuild,v 1.2 2015/04/08 18:01:22 mgorny Exp $
 
-EAPI=5
+EAPI=6
 PYTHON_COMPAT=( python2_7 )
 DISTUTILS_SINGLE_IMPL=yesplz
 DISTUTILS_OPTIONAL=yesplz
 WANT_AUTOMAKE=none
-PATCHSET=1
+PATCHSET=3
 GENTOO_DEPEND_ON_PERL=no
 
 inherit autotools distutils-r1 eutils perl-module systemd
 
 DESCRIPTION="Software for generating and retrieving SNMP data"
-HOMEPAGE="http://net-snmp.sourceforge.net/"
+HOMEPAGE="http://www.net-snmp.org/"
 SRC_URI="
-	mirror://sourceforge/${PN}/${PN}/${PV/_pre*/}-pre-releases/${P/_pre*/}.${PV/*_}.tar.gz
-	http://dev.gentoo.org/~jer/${PN}-5.7.3-patches-${PATCHSET}.tar.xz
+	mirror://sourceforge/project/${PN}/${PN}/${PV/_p*/}/${P/_p*/}.tar.gz
+	https://dev.gentoo.org/~jer/${PN}-5.7.3-patches-3.tar.xz
 "
 
 S=${WORKDIR}/${P/_/.}
 
 # GPL-2 for the init scripts
 LICENSE="HPND BSD GPL-2"
-SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sh ~sparc ~x86"
-IUSE="bzip2 doc elf ipv6 mfd-rewrites minimal perl python rpm selinux ssl tcpd X zlib lm_sensors ucd-compat pci netlink mysql"
+SLOT="0/35"
+KEYWORDS="~amd64"
+IUSE="X bzip2 doc elf kmem ipv6 libressl lm_sensors mfd-rewrites minimal mysql netlink pci perl python rpm selinux smux ssl tcpd ucd-compat zlib"
 
 COMMON_DEPEND="
-	ssl? ( >=dev-libs/openssl-0.9.6d )
+	ssl? (
+		!libressl? ( >=dev-libs/openssl-0.9.6d:0= )
+		libressl? ( dev-libs/libressl:= )
+	)
 	tcpd? ( >=sys-apps/tcp-wrappers-7.6 )
 	rpm? (
 		app-arch/rpm
@@ -44,8 +46,8 @@ COMMON_DEPEND="
 	pci? ( sys-apps/pciutils )
 	lm_sensors? ( sys-apps/lm_sensors )
 	netlink? ( dev-libs/libnl:3 )
-	mysql? ( virtual/mysql )
-	perl? ( dev-lang/perl )
+	mysql? ( dev-db/mysql-connector-c:0= )
+	perl? ( dev-lang/perl:= )
 "
 DEPEND="
 	${COMMON_DEPEND}
@@ -54,7 +56,7 @@ DEPEND="
 RDEPEND="
 	${COMMON_DEPEND}
 	perl? (
-		X? ( dev-perl/perl-tk )
+		X? ( dev-perl/Tk )
 		!minimal? ( dev-perl/TermReadKey )
 	)
 	selinux? ( sec-policy/selinux-snmp )
@@ -64,6 +66,7 @@ REQUIRED_USE="
 	python? ( ${PYTHON_REQUIRED_USE} )
 	rpm? ( bzip2 zlib )
 "
+S=${WORKDIR}/${P/_p*/}
 
 RESTRICT=test
 
@@ -73,20 +76,30 @@ pkg_setup() {
 
 src_prepare() {
 	# snmpconf generates config files with proper selinux context
-	use selinux && epatch "${FILESDIR}"/${PN}-5.1.2-snmpconf-selinux.patch
-	epatch "${FILESDIR}"/${PN}-no_des.patch
+	use selinux && eapply "${FILESDIR}"/${PN}-5.1.2-snmpconf-selinux.patch
 
-	epatch "${WORKDIR}"/patches/*.patch
+	eapply "${FILESDIR}"/${PN}-5.7.3-include-limits.patch
+	eapply "${FILESDIR}"/${PN}-5.8-tinfo.patch
 
-	epatch_user
+	mv "${WORKDIR}"/patches/0002-Respect-DESTDIR-for-pythoninstall.patch{,.disabled} || die
+	mv "${WORKDIR}"/patches/0004-Don-t-report-CFLAGS-and-LDFLAGS-in-net-snmp-config.patch{,.disabled} || die
+	eapply "${WORKDIR}"/patches/*.patch
+
+	eapply "${FILESDIR}"/${PN}-openssl-1.1.0.patch
+
+	eapply_user
 
 	eautoconf
 }
 
 src_configure() {
 	# keep this in the same line, configure.ac arguments are passed down to config.h
-	local mibs="host ucd-snmp/dlmod ucd-snmp/diskio ucd-snmp/extensible mibII/mta_sendmail smux etherlike-mib/dot3StatsTable"
+	local mibs="host ucd-snmp/dlmod ucd-snmp/diskio ucd-snmp/extensible mibII/mta_sendmail etherlike-mib/dot3StatsTable"
 	use lm_sensors && mibs="${mibs} ucd-snmp/lmsensorsMib"
+	use smux && mibs="${mibs} smux"
+
+	# Assume /etc/mtab is not present with a recent baselayout/openrc (bug #565136)
+	use kernel_linux && export ac_cv_ETC_MNTTAB=/etc/mtab
 
 	econf \
 		$(use_enable !ssl internal-md5) \
@@ -96,6 +109,7 @@ src_configure() {
 		$(use_enable ucd-compat ucd-snmp-compatibility) \
 		$(use_with bzip2) \
 		$(use_with elf) \
+		$(use_with kmem kmem-usage) \
 		$(use_with mysql) \
 		$(use_with netlink nl) \
 		$(use_with pci) \
@@ -113,14 +127,13 @@ src_configure() {
 		--with-mib-modules="${mibs}" \
 		--with-persistent-directory="/var/lib/net-snmp" \
 		--with-sys-contact="root@Unknown" \
-		--with-sys-location="Unknown" \
-		--disable-des
+		--with-sys-location="Unknown"
 }
 
 src_compile() {
-	emake \
-		OTHERLDFLAGS="${LDFLAGS}" \
-		sedscript all
+	for target in snmplib agent sedscript all; do
+		emake OTHERLDFLAGS="${LDFLAGS}" ${target}
+	done
 
 	use doc && emake docsdox
 }
@@ -153,7 +166,10 @@ src_install () {
 	dodoc AGENT.txt ChangeLog FAQ INSTALL NEWS PORTING README* TODO
 	newdoc EXAMPLE.conf.def EXAMPLE.conf
 
-	use doc && dohtml docs/html/*
+	if use doc; then
+		docinto html
+		dodoc -r docs/html/*
+	fi
 
 	keepdir /var/lib/net-snmp
 
@@ -179,4 +195,6 @@ src_install () {
 			"${D}"/usr/share/snmp/snmpconf-data \
 			|| die
 	fi
+
+	prune_libtool_files
 }
