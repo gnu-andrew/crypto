@@ -1,16 +1,16 @@
-# Copyright 1999-2018 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
 
 DIST_AUTHOR=MIKEM
-DIST_VERSION=1.82
+DIST_VERSION=1.85
 DIST_EXAMPLES=("examples/*")
 inherit flag-o-matic multilib perl-module
 
 DESCRIPTION="Perl extension for using OpenSSL"
 SRC_URI="${SRC_URI}
-	http://fuseyism.com/patches/${PN}-openssl-1.1.0-updated-constants.patch"
+	http://fuseyism.com/patches/${P}-openssl-1.1.0-updated-constants.patch"
 
 LICENSE="openssl"
 SLOT="0"
@@ -41,13 +41,18 @@ PATCHES=(
 	"${FILESDIR}/${PN}-1.82-fix-libdir.patch"
 	"${FILESDIR}/${PN}-1.82-fix-network-tests.patch"
 	"${FILESDIR}/${PN}-openssl-1.1.0.patch"
-	"${DISTDIR}/${PN}-openssl-1.1.0-updated-constants.patch"
+	"${DISTDIR}/${P}-openssl-1.1.0-updated-constants.patch"
 )
-
-src_prepare() {
-	use test && perl_rm_files 't/local/01_pod.t' 't/local/02_pod_coverage.t' 't/local/kwalitee.t'
-	perl-module_src_prepare
-}
+PERL_RM_FILES=(
+	# Hateful author tests
+	't/local/01_pod.t'
+	't/local/02_pod_coverage.t'
+	't/local/kwalitee.t'
+	# Broken under FEATURES="network-sandbox"
+	# https://rt.cpan.org/Ticket/Display.html?id=128207
+	't/local/06_tcpecho.t'
+	't/local/07_sslecho.t'
+)
 
 src_configure() {
 	if use test && has network ${DIST_TEST_OVERRIDE:-${DIST_TEST:-do parallel}}; then
