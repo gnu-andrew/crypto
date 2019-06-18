@@ -1,14 +1,15 @@
 --- a/SSLeay.xs.old	2018-01-27 20:43:03.000000000 +0000
-+++ b/SSLeay.xs	2019-06-13 04:43:24.238462757 +0100
-@@ -160,6 +160,7 @@
++++ b/SSLeay.xs	2019-06-17 16:02:35.523278558 +0100
+@@ -160,6 +160,8 @@
   typedef struct block BLOCK;
  */
  #define BLOCK OPENSSL_BLOCK
 +#include <openssl/bn.h>
++#include <openssl/dh.h>
  #include <openssl/err.h>
  #include <openssl/lhash.h>
  #include <openssl/rand.h>
-@@ -178,6 +179,9 @@
+@@ -178,6 +180,9 @@
  #ifndef OPENSSL_NO_MD5
  #include <openssl/md5.h>     /* openssl-SNAP-20020227 does not automatically include this */
  #endif
@@ -18,109 +19,59 @@
  #if OPENSSL_VERSION_NUMBER >= 0x00905000L
  #include <openssl/ripemd.h>
  #endif
-@@ -195,6 +199,13 @@
+@@ -195,6 +200,47 @@
  #if OPENSSL_VERSION_NUMBER >= 0x10000000L
  #include <openssl/ocsp.h>
  #endif
-+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-+#define TLSv1_method TLS_method
-+#define TLSv1_1_method TLS_method
-+#define TLSv1_2_method TLS_method
-+#define SSL_library_init() OPENSSL_init_ssl(0, NULL)
++#if OPENSSL_API_COMPAT >= 0x10100000L
++#define SSLEAY_VERSION OPENSSL_VERSION
++#define SSLeay OpenSSL_version_num
++#define SSLeay_version OpenSSL_version
++#define SSL_load_error_strings() OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS | \
++						  OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL)
++#define ERR_load_crypto_strings() OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL)
++#define RAND_pseudo_bytes RAND_bytes
++#define RAND_cleanup() while (0) continue
 +#define ASN1_STRING_data ASN1_STRING_get0_data
++#define X509_CRL_set_lastUpdate X509_CRL_set1_lastUpdate
++#define X509_CRL_set_nextUpdate X509_CRL_set1_nextUpdate
++#define X509_CRL_get_lastUpdate X509_CRL_get0_lastUpdate
++#define X509_CRL_get_nextUpdate X509_CRL_get0_nextUpdate
++#define X509_get_notBefore X509_getm_notBefore
++#define X509_get_notAfter X509_getm_notAfter
++#define OpenSSL_add_all_digests() OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_DIGESTS, NULL)
++#define OPENSSL_add_all_algorithms_noconf() OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_DIGESTS | \
++								OPENSSL_INIT_ADD_ALL_CIPHERS, NULL)
++#define OPENSSL_add_all_algorithms_conf() OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_DIGESTS | \
++							      OPENSSL_INIT_ADD_ALL_CIPHERS | \
++							      OPENSSL_INIT_LOAD_CONFIG, NULL)
++#ifdef OPENSSL_LOAD_CONF
++#define OpenSSL_add_all_algorithms() OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_DIGESTS | \
++							 OPENSSL_INIT_ADD_ALL_CIPHERS | \
++							 OPENSSL_INIT_LOAD_CONFIG, NULL)
++#else
++#define OpenSSL_add_all_algorithms() OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_DIGESTS | \
++							 OPENSSL_INIT_ADD_ALL_CIPHERS, NULL)
++#endif
++#define SSL_library_init() OPENSSL_init_ssl(0, NULL)
++#define TLSv1_method TLS_method
++#define TLSv1_client_method TLS_client_method
++#define TLSv1_server_method TLS_server_method
++#define TLSv1_1_method TLS_method
++#define TLSv1_1_client_method TLS_client_method
++#define TLSv1_1_server_method TLS_server_method
++#define TLSv1_2_method TLS_method
++#define TLSv1_2_client_method TLS_client_method
++#define TLSv1_2_server_method TLS_server_method
 +#endif
  #undef BLOCK
  
  /* Debugging output - to enable use:
-@@ -1743,6 +1754,8 @@
- 
- #define REM0 "============= version related functions =============="
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+
- unsigned long
- SSLeay()
- 
-@@ -1762,6 +1775,17 @@
- #endif /* OpenSSL 1.1.0 */
- 
- 
-+#else
-+
-+unsigned long
-+OpenSSL_version_num()
-+
-+const char *
-+OpenSSL_version(type=0)
-+        int type
-+
-+#endif
-+
- #define REM1 "============= SSL CONTEXT functions =============="
- 
- SSL_CTX *
-@@ -2602,12 +2626,16 @@
-      OUTPUT:
-      RETVAL
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+
- void
- SSL_load_error_strings()
- 
- void
- ERR_load_crypto_strings()
- 
-+#endif
-+
- int
- SSL_FIPS_mode_set(int onoff)
-        CODE:
-@@ -2695,6 +2723,8 @@
-     OUTPUT:
-         RETVAL
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+
- int
- RAND_pseudo_bytes(buf, num)
-     SV *buf
-@@ -2711,6 +2741,8 @@
-     OUTPUT:
-         RETVAL
- 
-+#endif
-+
- void
- RAND_add(buf, num, entropy)
-     SV *buf
-@@ -2752,9 +2784,13 @@
-      CODE:
-      RAND_seed (buf, (int)len);
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+
- void
- RAND_cleanup()
- 
-+#endif
-+
- int
- RAND_load_file(file_name, how_much)
-      char *  file_name
-@@ -3029,12 +3065,24 @@
- int
- X509_CRL_set_issuer_name(X509_CRL *x, X509_NAME *name)
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+
- int
- X509_CRL_set_lastUpdate(X509_CRL *x, ASN1_TIME *tm)
- 
+@@ -3035,6 +3081,16 @@
  int
  X509_CRL_set_nextUpdate(X509_CRL *x, ASN1_TIME *tm)
  
-+#else
++#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
 +
 +int
 +X509_CRL_set1_lastUpdate(X509_CRL *x, const ASN1_TIME *tm)
@@ -133,45 +84,28 @@
  int
  X509_CRL_sort(X509_CRL *x)
  
-@@ -3046,12 +3094,24 @@
- X509_NAME *
- X509_CRL_get_issuer(X509_CRL *x)
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+	    
- ASN1_TIME *
- X509_CRL_get_lastUpdate(X509_CRL *x)
- 
+@@ -3052,6 +3108,16 @@
  ASN1_TIME *
  X509_CRL_get_nextUpdate(X509_CRL *x)
  
-+#else
++#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
 +
 +const ASN1_TIME *
 +X509_CRL_get0_lastUpdate(const X509_CRL *x)
 +
 +const ASN1_TIME *
 +X509_CRL_get0_nextUpdate(const X509_CRL *x)
-+	    
++
 +#endif
 +
  int
  X509_CRL_verify(X509_CRL *a, EVP_PKEY *r)
  
-@@ -3830,6 +3890,8 @@
-         if (utf8_decode) sv_utf8_decode(u8);
-         XPUSHs(sv_2mortal(u8));
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+
- ASN1_TIME *
- X509_get_notBefore(cert)
-      X509 *	cert
-@@ -3838,6 +3900,26 @@
+@@ -3838,6 +3904,26 @@
  X509_get_notAfter(cert)
       X509 *	cert
  
-+#else
++#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
 +
 +ASN1_TIME *
 +X509_getm_notBefore(cert)
@@ -194,35 +128,7 @@
  ASN1_TIME *
  X509_gmtime_adj(s, adj)
       ASN1_TIME * s
-@@ -4107,8 +4189,13 @@
-         RETVAL = 0;
-         if ((fp = fopen (file, "rb"))) {
- #if OPENSSL_VERSION_NUMBER >= 0x0090700fL
-+#if OPENSSL_API_COMPAT < 0x10100000L
-             OPENSSL_add_all_algorithms_noconf();
- #else
-+	    OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS
-+				| OPENSSL_INIT_ADD_ALL_DIGESTS, NULL);
-+#endif
-+#else
-             OpenSSL_add_all_algorithms();
- #endif
-             if ((p12 = d2i_PKCS12_fp(fp, NULL))) {
-@@ -4146,8 +4233,13 @@
-     PPCODE:
-         if ((fp = fopen (file, "rb"))) {
- #if OPENSSL_VERSION_NUMBER >= 0x0090700fL
-+#if OPENSSL_API_COMPAT < 0x10100000L
-             OPENSSL_add_all_algorithms_noconf();
- #else
-+	    OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS
-+				| OPENSSL_INIT_ADD_ALL_DIGESTS, NULL);
-+#endif
-+#else
-             OpenSSL_add_all_algorithms();
- #endif
-             if ((p12 = d2i_PKCS12_fp(fp, NULL))) {
-@@ -5394,7 +5486,7 @@
+@@ -5394,7 +5480,7 @@
  
  #endif
  
@@ -231,7 +137,7 @@
  
  RSA *
  RSA_generate_key(bits,ee,perl_cb=&PL_sv_undef,perl_data=&PL_sv_undef)
-@@ -5413,14 +5505,21 @@
+@@ -5413,14 +5499,21 @@
         e = BN_new();
         BN_set_word(e, ee);
         cb_data = simple_cb_data_new(perl_cb, perl_data);
@@ -256,50 +162,10 @@
         simple_cb_data_free(cb_data);
         BN_free(e);
         e = NULL;
-@@ -5533,10 +5632,14 @@
-     OUTPUT:
-         RETVAL
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+	
- void
- DH_free(dh)
- 	DH * dh
- 
-+#endif
-+
- long
- SSL_total_renegotiations(ssl)
-      SSL *	ssl
-@@ -5821,8 +5924,13 @@
- const EVP_MD *EVP_sha512()
- 
- #endif
-+
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+
- void OpenSSL_add_all_digests()
- 
-+#endif
-+
- const EVP_MD * EVP_get_digestbyname(const char *name)
- 
- int EVP_MD_type(const EVP_MD *md)
-@@ -5912,6 +6020,8 @@
- const EVP_CIPHER *
- EVP_get_cipherbyname(const char *name)
- 
-+#if OPENSSL_API_COMPAT < 0x10100000L
-+
- void
- OpenSSL_add_all_algorithms()
- 
-@@ -5925,6 +6035,20 @@
+@@ -5925,6 +6018,16 @@
  
  #endif
  
-+#else
-+
 +int
 +OPENSSL_init_crypto(opts, settings)
 +    uint64_t opts
@@ -310,13 +176,30 @@
 +    uint64_t opts
 +    const OPENSSL_INIT_SETTINGS *settings
 +
-+#endif
-+
  #if OPENSSL_VERSION_NUMBER >= 0x10000000L
  
  int
+--- a/typemap.old	2017-12-05 23:27:14.000000000 +0000
++++ b/typemap	2019-06-15 22:21:58.084628993 +0100
+@@ -37,6 +37,7 @@
+ struct cert_st * T_PTR
+ X509_STORE_CTX * T_PTR
+ ASN1_TIME *      T_PTR
++const ASN1_TIME *      T_PTR
+ ASN1_OCTET_STRING *   T_PTR
+ const ASN1_INTEGER *   T_PTR
+ ASN1_INTEGER *   T_PTR
+@@ -75,6 +76,8 @@
+ cb_ssl_int_int_ret_RSA *  T_PTR
+ cb_ssl_int_int_ret_DH  *  T_PTR
+ perl_filehandle_t T_PERL_IO_HANDLE
++uint64_t T_UV
++const OPENSSL_INIT_SETTINGS *	T_PTR
+ 
+ INPUT
+ 
 --- a/helper_script/regen_openssl_constants.pl.old	2017-12-22 21:29:39.000000000 +0000
-+++ b/helper_script/regen_openssl_constants.pl	2019-06-13 04:44:19.533608057 +0100
++++ b/helper_script/regen_openssl_constants.pl	2019-06-15 22:21:58.084628993 +0100
 @@ -378,13 +378,32 @@
  NID_x509Certificate
  NID_x509Crl
@@ -354,22 +237,3 @@
  RSA_3
  RSA_F4
  SSL_CB_ACCEPT_EXIT
---- a/typemap.old	2017-12-05 23:27:14.000000000 +0000
-+++ b/typemap	2019-06-13 04:45:00.988967280 +0100
-@@ -37,6 +37,7 @@
- struct cert_st * T_PTR
- X509_STORE_CTX * T_PTR
- ASN1_TIME *      T_PTR
-+const ASN1_TIME *      T_PTR
- ASN1_OCTET_STRING *   T_PTR
- const ASN1_INTEGER *   T_PTR
- ASN1_INTEGER *   T_PTR
-@@ -75,6 +76,8 @@
- cb_ssl_int_int_ret_RSA *  T_PTR
- cb_ssl_int_int_ret_DH  *  T_PTR
- perl_filehandle_t T_PERL_IO_HANDLE
-+uint64_t T_UV
-+const OPENSSL_INIT_SETTINGS *	T_PTR
- 
- INPUT
- 
