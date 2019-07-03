@@ -28,7 +28,7 @@
  			goto fail;
  		}
  
-+#if OPENSSL_VERSION_NUMBER < 0x10100000L
++#if OPENSSL_VERSION_NUMBER >= 0x10100000L
 +		SSL_CTX_set_min_proto_version(g_ssl_ctx, TLS1_VERSION);
 +		SSL_CTX_set_max_proto_version(g_ssl_ctx, TLS1_VERSION);
 +#endif

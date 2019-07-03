@@ -1,3 +1,12 @@
+*rdesktop-1.8.6 (03 Jul 2019)
+
+  03 Jul 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/rdesktop-1.8.4-libressl.patch,
+  +files/rdesktop-1.8.5-use_standard_gssapi.patch, +rdesktop-1.8.6.ebuild,
+  -files/rdesktop-1.8.3-openssl-1.1.patch, -rdesktop-1.8.3-r3.ebuild,
+  files/rdesktop-openssl-1.1.0.patch:
+  net-misc/rdesktop: Update to 1.8.6.
+
 *rdesktop-1.8.3-r3 (24 Dec 2018)
 
   24 Dec 2018; Andrew John Hughes <gnu_andrew@member.fsf.org>

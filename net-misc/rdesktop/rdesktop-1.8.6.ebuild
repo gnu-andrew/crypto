@@ -1,4 +1,4 @@
-# Copyright 1999-2018 Gentoo Authors
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
@@ -7,12 +7,12 @@ inherit autotools eutils
 MY_PV=${PV/_/-}
 
 DESCRIPTION="A Remote Desktop Protocol Client"
-HOMEPAGE="http://rdesktop.sourceforge.net/"
-SRC_URI="mirror://sourceforge/${PN}/${PN}-${MY_PV}.tar.gz"
+HOMEPAGE="http://www.rdesktop.org/"
+SRC_URI="https://github.com/${PN}/${PN}/releases/download/v${PV}/${P}.tar.gz"
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="~alpha ~amd64 ~arm ~hppa ~ia64 ~mips ~ppc ~ppc64 ~sparc ~x86 ~x86-fbsd ~amd64-linux ~x86-linux ~sparc-solaris ~x64-solaris ~x86-solaris"
+KEYWORDS="~amd64"
 IUSE="alsa ao debug ipv6 kerberos libressl libsamplerate oss pcsc-lite xrandr"
 
 S=${WORKDIR}/${PN}-${MY_PV}
@@ -26,7 +26,7 @@ RDEPEND="
 	x11-libs/libXdmcp
 	alsa? ( media-libs/alsa-lib )
 	ao? ( >=media-libs/libao-0.8.6 )
-	kerberos? ( net-libs/libgssglue )
+	kerberos? ( virtual/krb5 )
 	libsamplerate? ( media-libs/libsamplerate )
 	pcsc-lite? ( >=sys-apps/pcsc-lite-1.6.6 )
 	xrandr? ( x11-libs/libXrandr )"
@@ -36,9 +36,10 @@ BDEPEND=virtual/pkgconfig
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-1.6.0-sound_configure.patch
-	"${FILESDIR}"/${P}-no_strip.patch
-	"${FILESDIR}"/${P}-xrandr_configure.patch
-	"${FILESDIR}"/${P}-openssl-1.1.patch
+	"${FILESDIR}"/${PN}-1.8.3-no_strip.patch
+	"${FILESDIR}"/${PN}-1.8.3-xrandr_configure.patch
+	"${FILESDIR}"/${PN}-1.8.4-libressl.patch
+	"${FILESDIR}"/${PN}-1.8.5-use_standard_gssapi.patch
 	"${FILESDIR}"/${PN}-openssl-1.1.0.patch
 )
 
