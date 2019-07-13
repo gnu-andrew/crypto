@@ -1,0 +1,11 @@
+--- a/src/backend/postmaster/fork_process.c.old	2019-06-17 22:21:22.000000000 +0100
++++ b/src/backend/postmaster/fork_process.c	2019-07-07 10:13:56.794889695 +0100
+@@ -110,7 +110,7 @@
+ 		/*
+ 		 * Make sure processes do not share OpenSSL randomness state.
+ 		 */
+-#ifdef USE_OPENSSL
++#if defined(USE_OPENSSL) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
+ 		RAND_cleanup();
+ #endif
+ 	}

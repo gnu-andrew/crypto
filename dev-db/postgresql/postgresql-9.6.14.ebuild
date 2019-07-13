@@ -1,16 +1,19 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI="6"
+EAPI=7
 
-PYTHON_COMPAT=( python2_7 python3_{4,5,6} )
+PYTHON_COMPAT=( python2_7 python3_{5,6,7} )
 
-inherit eutils flag-o-matic linux-info multilib pam prefix python-single-r1 \
-		systemd user versionator
+PLOCALES="af cs de en es fa fr hr hu it ko nb pl pt_BR ro ru sk sl sv tr zh_CN
+		  zh_TW"
+
+inherit flag-o-matic l10n linux-info multilib pam prefix python-single-r1 \
+		systemd user
 
 KEYWORDS="~amd64"
 
-SLOT="$(get_version_component_range 1-2)"
+SLOT=$(ver_cut 1-2)
 
 MY_PV=${PV/_/}
 S="${WORKDIR}/${PN}-${MY_PV}"
@@ -19,27 +22,13 @@ SRC_URI="mirror://postgresql/source/v${MY_PV}/postgresql-${MY_PV}.tar.bz2"
 
 LICENSE="POSTGRESQL GPL-2"
 DESCRIPTION="PostgreSQL RDBMS"
-HOMEPAGE="http://www.postgresql.org/"
+HOMEPAGE="https://www.postgresql.org/"
 
-LINGUAS="af cs de en es fa fr hr hu it ko nb pl pt_BR ro ru sk sl sv tr
-		 zh_CN zh_TW"
-IUSE="doc kerberos kernel_linux ldap libressl nls pam perl -pg_legacytimestamp python
-	  +readline selinux +server systemd ssl static-libs tcl threads uuid xml zlib"
+IUSE="debug doc kerberos kernel_linux ldap libressl nls pam perl
+	  -pg_legacytimestamp python +readline selinux +server systemd ssl
+	  static-libs tcl threads uuid xml zlib"
 
-for lingua in ${LINGUAS}; do
-	IUSE+=" linguas_${lingua}"
-done
 REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
-
-wanted_languages() {
-	local enable_langs
-
-	for lingua in ${LINGUAS} ; do
-		use linguas_${lingua} && enable_langs+="${lingua} "
-	done
-
-	echo -n ${enable_langs}
-}
 
 CDEPEND="
 >=app-eselect/eselect-postgresql-2.0
@@ -122,7 +111,7 @@ src_prepare() {
 	sed 's/@install_bin@/install -c/' -i src/Makefile.global.in || die
 
 	use server || eapply "${FILESDIR}/${PN}-${SLOT}.3-no-server.patch"
-	eapply "${FILESDIR}/${PN}-${SLOT}-no-des.patch"
+	eapply "${FILESDIR}/${PN}-${SLOT}-openssl-1.1.0.patch"
 
 	if use pam ; then
 		sed -e "s/\(#define PGSQL_PAM_SERVICE \"postgresql\)/\1-${SLOT}/" \
@@ -166,6 +155,7 @@ src_configure() {
 		--with-system-tzdata="${PO}/usr/share/zoneinfo" \
 		$(use_enable !alpha spinlocks) \
 		$(use_enable !pg_legacytimestamp integer-datetimes) \
+		$(use_enable debug) \
 		$(use_enable threads thread-safety) \
 		$(use_with kerberos gssapi) \
 		$(use_with ldap) \
@@ -180,7 +170,7 @@ src_configure() {
 		$(use_with xml libxml) \
 		$(use_with xml libxslt) \
 		$(use_with zlib) \
-		"$(use_enable nls nls "$(wanted_languages)")"
+		$(use_enable nls nls "'$(l10n_get_locales)'")
 }
 
 src_compile() {
@@ -235,7 +225,11 @@ src_install() {
 	insinto /etc/postgresql-${SLOT}
 	newins src/bin/psql/psqlrc.sample psqlrc
 
-	use static-libs || find "${ED}" -name '*.a' -delete
+	# Don't delete libpg{port,common}.a (Bug #571046). They're always
+	# needed by extensions utilizing PGXS.
+	use static-libs || \
+		find "${ED}" -name '*.a' ! -name libpgport.a ! -name libpgcommon.a \
+			 -delete
 
 	local f bn
 	for f in $(find "${ED}/usr/$(get_libdir)/postgresql-${SLOT}/bin" \
@@ -266,8 +260,9 @@ src_install() {
 
 		if use systemd; then
 			sed -e "s|@SLOT@|${SLOT}|g" -e "s|@LIBDIR@|$(get_libdir)|g" \
-				"${FILESDIR}/${PN}.service-9.6" | \
+				"${FILESDIR}/${PN}.service-9.6-r1" | \
 				systemd_newunit - ${PN}-${SLOT}.service
+			systemd_newtmpfilesd "${FILESDIR}"/${PN}.tmpfiles ${PN}-${SLOT}.conf
 		fi
 
 		newbin "${FILESDIR}"/${PN}-check-db-dir ${PN}-${SLOT}-check-db-dir
@@ -276,7 +271,7 @@ src_install() {
 
 		if use prefix ; then
 			keepdir /run/postgresql
-			fperms 0775 /run/postgresql
+			fperms 1775 /run/postgresql
 		fi
 	fi
 }
@@ -316,6 +311,7 @@ pkg_preinst() {
 }
 
 pkg_postinst() {
+	use server && use systemd && systemd_tmpfiles_create ${PN}-${SLOT}.conf
 	postgresql-config update
 
 	elog "If you need a global psqlrc-file, you can place it in:"
@@ -327,7 +323,7 @@ pkg_postinst() {
 		elog "https://wiki.gentoo.org/wiki/PostgreSQL"
 		elog
 		elog "Official documentation:"
-		elog "http://www.postgresql.org/docs/${SLOT}/static/index.html"
+		elog "https://www.postgresql.org/docs/${SLOT}/static/index.html"
 		elog
 		elog "The default location of the Unix-domain socket is:"
 		elog "    ${EROOT%/}/run/postgresql/"
@@ -392,8 +388,8 @@ pkg_config() {
 	einfo "    ${EROOT%/}/etc/conf.d/postgresql-${SLOT}"
 	einfo
 	einfo "Information on options that can be passed to initdb are found at:"
-	einfo "    http://www.postgresql.org/docs/${SLOT}/static/creating-cluster.html"
-	einfo "    http://www.postgresql.org/docs/${SLOT}/static/app-initdb.html"
+	einfo "    https://www.postgresql.org/docs/${SLOT}/static/creating-cluster.html"
+	einfo "    https://www.postgresql.org/docs/${SLOT}/static/app-initdb.html"
 	einfo
 	einfo "PG_INITDB_OPTS is currently set to:"
 	if [[ -z "${PG_INITDB_OPTS}" ]] ; then
