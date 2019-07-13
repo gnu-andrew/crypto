@@ -1,3 +1,11 @@
+*git-2.22.0 (13 Jul 2019)
+
+  13 Jul 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/git-2.22.0_rc0-optional-cvs.patch, +git-2.22.0.ebuild,
+  -files/git-2.18.0_rc1-optional-cvs.patch,
+  -files/git-2.21.0-quiet-submodules.patch, -git-2.21.0-r2.ebuild:
+  dev-vcs/git: Update to 2.22.0.
+
 *git-2.21.0-r2 (08 Jun 2019)
 
   08 Jun 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
