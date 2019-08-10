@@ -16,15 +16,18 @@ HPN_PATCHES=(
 	${PN}-${HPN_PV/./_}-hpn-DynWinNoneSwitch-${HPN_VER}.diff
 	${PN}-${HPN_PV/./_}-hpn-AES-CTR-${HPN_VER}.diff
 )
-HPN_DISABLE_MTAES=1 # unit tests hang on MT-AES-CTR
-SCTP_VER="1.1" SCTP_PATCH="${PARCH}-sctp-${SCTP_VER}.patch.xz"
+
+SCTP_VER="1.2" SCTP_PATCH="${PARCH}-sctp-${SCTP_VER}.patch.xz"
 X509_VER="11.6" X509_PATCH="${PARCH}+x509-${X509_VER}.diff.gz"
+
+PATCH_SET="openssh-7.9p1-patches-1.0"
 
 DESCRIPTION="Port of OpenBSD's free SSH release"
 HOMEPAGE="https://www.openssh.com/"
 SRC_URI="mirror://openbsd/OpenSSH/portable/${PARCH}.tar.gz
-	${SCTP_PATCH:+sctp? ( https://dev.gentoo.org/~chutzpah/dist/openssh/${SCTP_PATCH} )}
-	${HPN_VER:+hpn? ( $(printf "mirror://sourceforge/hpnssh/HPN-SSH%%20${HPN_VER/./v}%%20${HPN_PV/_}/%s\n" "${HPN_PATCHES[@]}") )}
+	https://dev.gentoo.org/~whissi/dist/${PN}/${PATCH_SET}.tar.xz
+	${SCTP_PATCH:+sctp? ( https://dev.gentoo.org/~whissi/dist/openssh/${SCTP_PATCH} )}
+	${HPN_VER:+hpn? ( $(printf "mirror://sourceforge/hpnssh/HPN-SSH%%20${HPN_VER/./v}%%20${HPN_PV/_P/p}/%s\n" "${HPN_PATCHES[@]}") )}
 	${X509_PATCH:+X509? ( https://roumenpetrov.info/openssh/x509-${X509_VER}/${X509_PATCH} )}
 	"
 
@@ -119,6 +122,18 @@ src_prepare() {
 	eapply "${FILESDIR}"/${PN}-6.7_p1-openssl-ignore-status.patch
 	eapply "${FILESDIR}"/${PN}-7.5_p1-disable-conch-interop-tests.patch
 
+	if use X509 ; then
+		# patch doesn't apply due to X509 modifications
+		rm \
+			"${WORKDIR}"/patches/0001-fix-key-type-check.patch \
+			"${WORKDIR}"/patches/0002-request-rsa-sha2-cert-signatures.patch \
+			|| die
+	else
+		eapply "${FILESDIR}"/${PN}-7.9_p1-CVE-2018-20685.patch # X509 patch set includes this patch
+	fi
+
+	[[ -d ${WORKDIR}/patches ]] && eapply "${WORKDIR}"/patches
+
 	local PATCHSET_VERSION_MACROS=()
 
 	if use X509 ; then
@@ -126,6 +141,11 @@ src_prepare() {
 		eapply "${FILESDIR}/${P}-X509-glue-${X509_VER}.patch"
 		eapply "${FILESDIR}/${P}-X509-dont-make-piddir-${X509_VER}.patch"
 		popd || die
+
+		if use hpn ; then
+			einfo "Will disable MT AES cipher due to incompatbility caused by X509 patch set"
+			HPN_DISABLE_MTAES=1
+		fi
 
 		eapply "${WORKDIR}"/${X509_PATCH%.*}
 		eapply "${FILESDIR}"/${P}-X509-${X509_VER}-tests.patch
@@ -224,8 +244,6 @@ src_prepare() {
 		-e "/#UseLogin no/d" \
 		"${S}"/sshd_config || die "Failed to remove removed UseLogin option (sshd_config)"
 
-	[[ -d ${WORKDIR}/patch ]] && eapply "${WORKDIR}"/patch
-
 	eapply_user #473004
 
 	tc-export PKG_CONFIG
@@ -276,7 +294,7 @@ src_configure() {
 		# We apply the sctp patch conditionally, so can't pass --without-sctp
 		# unconditionally else we get unknown flag warnings.
 		$(use sctp && use_with sctp)
-		$(use_with ldns)
+		$(use_with ldns ldns "${EPREFIX%/}"/usr)
 		$(use_with libedit)
 		$(use_with pam)
 		$(use_with pie)
@@ -287,8 +305,8 @@ src_configure() {
 		$(use_with !elibc_Cygwin hardening) #659210
 	)
 
-	# stackprotect is broken on musl x86
-	use elibc_musl && use x86 && myconf+=( --without-stackprotect )
+	# stackprotect is broken on musl x86 and ppc
+	use elibc_musl && ( use x86 || use ppc ) && myconf+=( --without-stackprotect )
 
 	# The seccomp sandbox is broken on x32, so use the older method for now. #553748
 	use amd64 && [[ ${ABI} == "x32" ]] && myconf+=( --with-sandbox=rlimit )
@@ -377,7 +395,7 @@ src_install() {
 	emake install-nokeys DESTDIR="${D}"
 	fperms 600 /etc/ssh/sshd_config
 	dobin contrib/ssh-copy-id
-	newinitd "${FILESDIR}"/sshd.initd sshd
+	newinitd "${FILESDIR}"/sshd-r1.initd sshd
 	newconfd "${FILESDIR}"/sshd-r1.confd sshd
 
 	newpamd "${FILESDIR}"/sshd.pam_include.2 sshd
