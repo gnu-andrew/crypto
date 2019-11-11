@@ -1,0 +1,10 @@
+*partimage-0.6.9-r1 (11 Nov 2019)
+
+  11 Nov 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/partimage-0.6.9-minor-typo.patch,
+  +files/partimage-0.6.9-openssl-1.1-compatibility.patch,
+  +files/partimage-0.6.9-zlib-1.2.5.2.patch,
+  +files/partimage-openssl-1.1.0.patch, +files/partimaged.conf,
+  +files/partimaged.init.2, +files/partimaged.pam.2, +files/servercert.cnf,
+  +metadata.xml, +partimage-0.6.9-r1.ebuild:
+  sys-block/partimage: Support OpenSSL 1.1.0.

@@ -1,0 +1,37 @@
+--- a/src/client/netclient.cpp.old	2019-10-21 16:29:01.908824529 +0100
++++ b/src/client/netclient.cpp	2019-10-21 16:53:49.838061343 +0100
+@@ -42,13 +42,15 @@
+   if (bUseSSL)
+     {
+       showDebug(3, "initializing client ssl\n");
+-      SSLeay_add_ssl_algorithms();
+ #if OPENSSL_VERSION_NUMBER < 0x10100000
++      SSLeay_add_ssl_algorithms();
+       meth = TLSv1_client_method();
++      SSL_load_error_strings();
+ #else
++      OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS |
++		       OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
+       meth = TLS_client_method();
+ #endif
+-      SSL_load_error_strings();
+       ctx = SSL_CTX_new(meth);
+       if (!ctx)
+         THROW(ERR_SSL_CTX);
+--- a/src/server/netserver.cpp.old	2019-10-21 16:29:01.908824529 +0100
++++ b/src/server/netserver.cpp	2019-10-21 16:56:07.183960284 +0100
+@@ -37,11 +37,13 @@
+   ctx = NULL;
+   if (g_bUseSSL)
+     {
++#if OPENSSL_VERSION_NUMBER < 0x10100000
+       SSL_load_error_strings();
+       SSLeay_add_ssl_algorithms();
+-#if OPENSSL_VERSION_NUMBER < 0x10100000
+       meth = TLSv1_server_method();
+ #else
++      OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS |
++		       OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
+       meth = TLS_server_method();
+ #endif
+       ctx = SSL_CTX_new(meth);
