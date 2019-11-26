@@ -1,0 +1,92 @@
+--- a/libvncclient/tls_openssl.c.old	2019-01-06 19:09:30.000000000 +0000
++++ b/libvncclient/tls_openssl.c	2019-11-25 03:23:09.271186718 +0000
+@@ -65,6 +65,8 @@
+ #endif
+ 
+ static rfbBool rfbTLSInitialized = FALSE;
++
++#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+ static MUTEX_TYPE *mutex_buf = NULL;
+ 
+ struct CRYPTO_dynlock_value {
+@@ -115,7 +117,7 @@
+ 	MUTEX_FREE(l->mutex);
+ 	free(l);
+ }
+-
++#endif
+ 
+ static int
+ ssl_errno (SSL *ssl, int ret)
+@@ -150,6 +152,10 @@
+ 
+   if (rfbTLSInitialized) return TRUE;
+ 
++#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
++  OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS | \
++		   OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
++#else
+   mutex_buf = malloc(CRYPTO_num_locks() * sizeof(MUTEX_TYPE));
+   if (mutex_buf == NULL) {
+     rfbClientLog("Failed to initialized OpenSSL: memory.\n");
+@@ -166,9 +172,14 @@
+   CRYPTO_set_dynlock_destroy_callback(dyn_destroy_function);
+   SSL_load_error_strings();
+   SSLeay_add_ssl_algorithms();
++#endif
+   RAND_load_file("/dev/urandom", 1024);
+ 
++#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
++  rfbClientLog("OpenSSL version %s initialized.\n", OpenSSL_version(OPENSSL_VERSION));
++#else
+   rfbClientLog("OpenSSL version %s initialized.\n", SSLeay_version(SSLEAY_VERSION));
++#endif
+   rfbTLSInitialized = TRUE;
+   return TRUE;
+ }
+@@ -669,6 +680,7 @@
+ {
+   int i;
+ 
++#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+   if (mutex_buf != NULL) {
+     CRYPTO_set_dynlock_create_callback(NULL);
+     CRYPTO_set_dynlock_lock_callback(NULL);
+@@ -682,7 +694,8 @@
+     free(mutex_buf);
+     mutex_buf = NULL;
+   }
+-
++#endif
++  
+   SSL_free(client->tlsSession);
+ }
+ 
+--- a/libvncserver/rfbssl_openssl.c.old	2019-01-06 19:09:30.000000000 +0000
++++ b/libvncserver/rfbssl_openssl.c	2019-11-25 03:27:56.914696815 +0000
+@@ -43,8 +43,13 @@
+     int r, ret = -1;
+     struct rfbssl_ctx *ctx;
+ 
++#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
++  OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS | \
++		   OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
++#else
+     SSL_library_init();
+     SSL_load_error_strings();
++#endif
+ 
+     if (cl->screen->sslkeyfile && *cl->screen->sslkeyfile) {
+       keyfile = cl->screen->sslkeyfile;
+@@ -56,7 +61,11 @@
+ 	rfbErr("OOM\n");
+     } else if (!cl->screen->sslcertfile || !cl->screen->sslcertfile[0]) {
+ 	rfbErr("SSL connection but no cert specified\n");
++#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
++    } else if (NULL == (ctx->ssl_ctx = SSL_CTX_new(TLS_server_method()))) {
++#else
+     } else if (NULL == (ctx->ssl_ctx = SSL_CTX_new(TLSv1_server_method()))) {
++#endif
+ 	rfbssl_error();
+     } else if (SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, keyfile, SSL_FILETYPE_PEM) <= 0) {
+ 	rfbErr("Unable to load private key file %s\n", keyfile);

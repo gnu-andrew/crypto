@@ -1,0 +1,13 @@
+*libvncserver-0.9.12-r3 (26 Nov 2019)
+
+  26 Nov 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/libvncserver-0.9.12-CVE-2018-20750.patch,
+  +files/libvncserver-0.9.12-CVE-2019-15681.patch,
+  +files/libvncserver-0.9.12-cmake-libdir.patch,
+  +files/libvncserver-0.9.12-fix-tight-raw-decoding.patch,
+  +files/libvncserver-0.9.12-libgcrypt.patch,
+  +files/libvncserver-0.9.12-pkgconfig-libdir.patch,
+  +files/libvncserver-0.9.12-sparc-unaligned.patch,
+  +files/libvncserver-openssl-1.1.0.patch, +libvncserver-0.9.12-r3.ebuild,
+  +metadata.xml:
+  net-libs/libvncserver: Support OpenSSL 1.1.0.
