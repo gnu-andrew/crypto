@@ -1,0 +1,179 @@
+--- a/Modules/_ssl.c.old	2019-12-18 17:21:23.000000000 +0000
++++ b/Modules/_ssl.c	2019-12-22 05:22:16.645075572 +0000
+@@ -896,8 +896,13 @@
+                 goto error;
+             }
+         } else {
++#ifndef PY_OPENSSL_1_1_API
+             if (!X509_VERIFY_PARAM_set1_ip(param, ASN1_STRING_data(ip),
+                                            ASN1_STRING_length(ip))) {
++#else
++            if (!X509_VERIFY_PARAM_set1_ip(param, ASN1_STRING_get0_data(ip),
++                                           ASN1_STRING_length(ip))) {
++#endif
+                 _setSSLError(NULL, 0, __FILE__, __LINE__);
+                 goto error;
+             }
+@@ -1372,8 +1377,14 @@
+                     goto fail;
+                 }
+                 PyTuple_SET_ITEM(t, 0, v);
++		
++#ifndef PY_OPENSSL_1_1_API
+                 v = PyUnicode_FromStringAndSize((char *)ASN1_STRING_data(as),
+                                                 ASN1_STRING_length(as));
++#else
++                v = PyUnicode_FromStringAndSize((char *)ASN1_STRING_get0_data(as),
++						ASN1_STRING_length(as));
++#endif
+                 if (v == NULL) {
+                     Py_DECREF(t);
+                     goto fail;
+@@ -1668,7 +1679,11 @@
+     ASN1_INTEGER *serialNumber;
+     char buf[2048];
+     int len, result;
++#ifndef PY_OPENSSL_1_1_API
+     ASN1_TIME *notBefore, *notAfter;
++#else
++    const ASN1_TIME *notBefore, *notAfter;
++#endif    
+     PyObject *pnotBefore, *pnotAfter;
+ 
+     retval = PyDict_New();
+@@ -1730,7 +1745,11 @@
+     Py_DECREF(sn_obj);
+ 
+     (void) BIO_reset(biobuf);
++#ifndef PY_OPENSSL_1_1_API
+     notBefore = X509_get_notBefore(certificate);
++#else
++    notBefore = X509_get0_notBefore(certificate);
++#endif
+     ASN1_TIME_print(biobuf, notBefore);
+     len = BIO_gets(biobuf, buf, sizeof(buf)-1);
+     if (len < 0) {
+@@ -1747,7 +1766,11 @@
+     Py_DECREF(pnotBefore);
+ 
+     (void) BIO_reset(biobuf);
++#ifndef PY_OPENSSL_1_1_API
+     notAfter = X509_get_notAfter(certificate);
++#else
++    notAfter = X509_get0_notAfter(certificate);
++#endif
+     ASN1_TIME_print(biobuf, notAfter);
+     len = BIO_gets(biobuf, buf, sizeof(buf)-1);
+     if (len < 0) {
+@@ -3084,6 +3107,7 @@
+ #endif
+ 
+     PySSL_BEGIN_ALLOW_THREADS
++#ifndef PY_OPENSSL_1_1_API
+     if (proto_version == PY_SSL_VERSION_TLS1)
+         ctx = SSL_CTX_new(TLSv1_method());
+ #if HAVE_TLSv1_2
+@@ -3106,6 +3130,34 @@
+         ctx = SSL_CTX_new(TLS_client_method());
+     else if (proto_version == PY_SSL_VERSION_TLS_SERVER)
+         ctx = SSL_CTX_new(TLS_server_method());
++#else
++    if (proto_version == PY_SSL_VERSION_TLS_CLIENT)
++        ctx = SSL_CTX_new(TLS_client_method());
++    else if (proto_version == PY_SSL_VERSION_TLS_SERVER)
++        ctx = SSL_CTX_new(TLS_server_method());
++    else
++	ctx = SSL_CTX_new(TLS_method());
++    if (proto_version == PY_SSL_VERSION_TLS1)
++        SSL_CTX_set_max_proto_version(ctx, TLS1_VERSION);
++#if HAVE_TLSv1_2
++    else if (proto_version == PY_SSL_VERSION_TLS1_1)
++        SSL_CTX_set_max_proto_version(ctx, TLS1_1_VERSION);
++    else if (proto_version == PY_SSL_VERSION_TLS1_2)
++        SSL_CTX_set_max_proto_version(ctx, TLS1_2_VERSION);
++#endif
++#ifndef OPENSSL_NO_SSL3
++    else if (proto_version == PY_SSL_VERSION_SSL3)
++        SSL_CTX_set_max_proto_version(ctx, SSL3_VERSION);
++#endif
++#ifndef OPENSSL_NO_SSL2
++    // OpenSSL 1.1.0 has no SSLv2
++    else if (proto_version == PY_SSL_VERSION_SSL2)
++        proto_version = -1;
++#endif
++    else if (proto_version == PY_SSL_VERSION_TLS) {
++	/* No restrictions necessary */
++    }
++#endif  
+     else
+         proto_version = -1;
+     PySSL_END_ALLOW_THREADS
+@@ -3208,7 +3260,11 @@
+        conservative and assume it wasn't fixed until release. We do this check
+        at runtime to avoid problems from the dynamic linker.
+        See #25672 for more on this. */
++#ifndef PY_OPENSSL_1_1_API
+     libver = SSLeay();
++#else
++    libver = OpenSSL_version_num();
++#endif
+     if (!(libver >= 0x10001000UL && libver < 0x1000108fUL) &&
+         !(libver >= 0x10000000UL && libver < 0x100000dfUL)) {
+         SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
+@@ -5287,12 +5343,16 @@
+     bytes = PyBytes_FromStringAndSize(NULL, len);
+     if (bytes == NULL)
+         return NULL;
++#ifndef PY_OPENSSL_1_1_API
+     if (pseudo) {
+         ok = RAND_pseudo_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
+         if (ok == 0 || ok == 1)
+             return Py_BuildValue("NO", bytes, ok == 1 ? Py_True : Py_False);
+     }
+     else {
++#else
++    {
++#endif
+         ok = RAND_bytes((unsigned char*)PyBytes_AS_STRING(bytes), len);
+         if (ok == 1)
+             return bytes;
+@@ -6379,7 +6439,11 @@
+     /* SSLeay() gives us the version of the library linked against,
+        which could be different from the headers version.
+     */
++#ifndef PY_OPENSSL_1_1_API
+     libver = SSLeay();
++#else
++    libver = OpenSSL_version_num();
++#endif
+     r = PyLong_FromUnsignedLong(libver);
+     if (r == NULL)
+         return NULL;
+@@ -6389,7 +6453,11 @@
+     r = Py_BuildValue("IIIII", major, minor, fix, patch, status);
+     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION_INFO", r))
+         return NULL;
++#ifndef PY_OPENSSL_1_1_API
+     r = PyUnicode_FromString(SSLeay_version(SSLEAY_VERSION));
++#else
++    r = PyUnicode_FromString(OpenSSL_version(OPENSSL_VERSION));
++#endif
+     if (r == NULL || PyModule_AddObject(m, "OPENSSL_VERSION", r))
+         return NULL;
+ 
+--- a/Modules/_hashopenssl.c.old	2019-12-18 17:21:23.000000000 +0000
++++ b/Modules/_hashopenssl.c	2019-12-22 05:16:05.458706732 +0000
+@@ -26,7 +26,12 @@
+ #include <openssl/objects.h>
+ #include "openssl/err.h"
+ 
+-#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
++#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
++#  define OPENSSL_VERSION_1_1 1
++#  define PY_OPENSSL_1_1_API 1
++#endif
++
++#ifndef OPENSSL_VERSION_1_1
+ /* OpenSSL < 1.1.0 */
+ #define EVP_MD_CTX_new EVP_MD_CTX_create
+ #define EVP_MD_CTX_free EVP_MD_CTX_destroy

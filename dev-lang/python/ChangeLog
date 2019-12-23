@@ -1,3 +1,11 @@
+*python-3.8.1 (23 Dec 2019)
+
+  23 Dec 2019; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/python-3.7-openssl-1.1.0.patch, +files/python-3.7.5-hashlib.patch,
+  +files/python-3.8-openssl-1.1.0.patch, +python-3.8.1.ebuild,
+  -files/python-openssl-1.1.0.patch, python-3.7.0.ebuild:
+  dev-lang/python: Support Python 3.8 & OpenSSL 1.1.0.
+
 *python-3.7.0 (04 Sep 2018)
 
   04 Sep 2018; Andrew John Hughes <gnu_andrew@member.fsf.org> +files/pydoc.conf,
