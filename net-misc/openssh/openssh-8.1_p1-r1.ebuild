@@ -1,7 +1,7 @@
 # Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=7
 
 inherit user flag-o-matic multilib autotools pam systemd
 
@@ -18,15 +18,14 @@ HPN_PATCHES=(
 )
 
 SCTP_VER="1.2" SCTP_PATCH="${PARCH}-sctp-${SCTP_VER}.patch.xz"
-X509_VER="11.6" X509_PATCH="${PARCH}+x509-${X509_VER}.diff.gz"
+X509_VER="12.3" X509_PATCH="${PARCH}+x509-${X509_VER}.diff.gz"
 
 PATCH_SET="openssh-7.9p1-patches-1.0"
 
 DESCRIPTION="Port of OpenBSD's free SSH release"
 HOMEPAGE="https://www.openssh.com/"
 SRC_URI="mirror://openbsd/OpenSSH/portable/${PARCH}.tar.gz
-	https://dev.gentoo.org/~whissi/dist/${PN}/${PATCH_SET}.tar.xz
-	${SCTP_PATCH:+sctp? ( https://dev.gentoo.org/~whissi/dist/openssh/${SCTP_PATCH} )}
+	${SCTP_PATCH:+sctp? ( https://dev.gentoo.org/~chutzpah/dist/openssh/${SCTP_PATCH} )}
 	${HPN_VER:+hpn? ( $(printf "mirror://sourceforge/hpnssh/HPN-SSH%%20${HPN_VER/./v}%%20${HPN_PV/_P/p}/%s\n" "${HPN_PATCHES[@]}") )}
 	${X509_PATCH:+X509? ( https://roumenpetrov.info/openssh/x509-${X509_VER}/${X509_PATCH} )}
 	"
@@ -35,7 +34,7 @@ LICENSE="BSD GPL-2"
 SLOT="0"
 KEYWORDS="~amd64"
 # Probably want to drop ssl defaulting to on in a future version.
-IUSE="abi_mips_n32 audit bindist debug hpn kerberos kernel_linux ldns libedit libressl livecd pam +pie sctp selinux +ssl static test X X509"
+IUSE="abi_mips_n32 audit bindist debug hpn kerberos kernel_linux ldns libedit libressl livecd pam +pie sctp selinux +ssl static test X X509 xmss"
 RESTRICT="!test? ( test )"
 REQUIRED_USE="ldns? ( ssl )
 	pie? ( !static )
@@ -69,17 +68,18 @@ LIB_DEPEND="
 	>=sys-libs/zlib-1.2.3:=[static-libs(+)]"
 RDEPEND="
 	!static? ( ${LIB_DEPEND//\[static-libs(+)]} )
-	pam? ( virtual/pam )
+	pam? ( sys-libs/pam )
 	kerberos? ( virtual/krb5 )"
 DEPEND="${RDEPEND}
 	static? ( ${LIB_DEPEND} )
-	virtual/pkgconfig
-	virtual/os-headers
-	sys-devel/autoconf"
+	virtual/os-headers"
 RDEPEND="${RDEPEND}
 	pam? ( >=sys-auth/pambase-20081028 )
 	userland_GNU? ( virtual/shadow )
 	X? ( x11-apps/xauth )"
+BDEPEND="
+	virtual/pkgconfig
+	sys-devel/autoconf"
 
 S="${WORKDIR}/${PARCH}"
 
@@ -102,9 +102,9 @@ pkg_pretend() {
 	fi
 
 	# Make sure people who are using tcp wrappers are notified of its removal. #531156
-	if grep -qs '^ *sshd *:' "${EROOT%/}"/etc/hosts.{allow,deny} ; then
+	if grep -qs '^ *sshd *:' "${EROOT}"/etc/hosts.{allow,deny} ; then
 		ewarn "Sorry, but openssh no longer supports tcp-wrappers, and it seems like"
-		ewarn "you're trying to use it.  Update your ${EROOT}etc/hosts.{allow,deny} please."
+		ewarn "you're trying to use it.  Update your ${EROOT}/etc/hosts.{allow,deny} please."
 	fi
 }
 
@@ -116,39 +116,24 @@ src_prepare() {
 	# don't break .ssh/authorized_keys2 for fun
 	sed -i '/^AuthorizedKeysFile/s:^:#:' sshd_config || die
 
-	eapply "${FILESDIR}"/${PN}-7.9_p1-openssl-1.0.2-compat.patch
 	eapply "${FILESDIR}"/${PN}-7.9_p1-include-stdlib.patch
-	eapply "${FILESDIR}"/${PN}-7.8_p1-GSSAPI-dns.patch #165444 integrated into gsskex
+	eapply "${FILESDIR}"/${PN}-8.1_p1-GSSAPI-dns.patch #165444 integrated into gsskex
 	eapply "${FILESDIR}"/${PN}-6.7_p1-openssl-ignore-status.patch
 	eapply "${FILESDIR}"/${PN}-7.5_p1-disable-conch-interop-tests.patch
-
-	if use X509 ; then
-		# patch doesn't apply due to X509 modifications
-		rm \
-			"${WORKDIR}"/patches/0001-fix-key-type-check.patch \
-			"${WORKDIR}"/patches/0002-request-rsa-sha2-cert-signatures.patch \
-			|| die
-	else
-		eapply "${FILESDIR}"/${PN}-7.9_p1-CVE-2018-20685.patch # X509 patch set includes this patch
-	fi
+	eapply "${FILESDIR}"/${PN}-8.0_p1-fix-putty-tests.patch
+	eapply "${FILESDIR}"/${PN}-8.0_p1-deny-shmget-shmat-shmdt-in-preauth-privsep-child.patch
 
 	[[ -d ${WORKDIR}/patches ]] && eapply "${WORKDIR}"/patches
 
 	local PATCHSET_VERSION_MACROS=()
 
 	if use X509 ; then
-		pushd "${WORKDIR}" || die
-		eapply "${FILESDIR}/${P}-X509-glue-${X509_VER}.patch"
-		eapply "${FILESDIR}/${P}-X509-dont-make-piddir-${X509_VER}.patch"
-		popd || die
-
-		if use hpn ; then
-			einfo "Will disable MT AES cipher due to incompatbility caused by X509 patch set"
-			HPN_DISABLE_MTAES=1
-		fi
+		pushd "${WORKDIR}" &>/dev/null || die
+		eapply "${FILESDIR}/${P}-X509-glue-"${X509_VER}".patch"
+		popd &>/dev/null || die
 
 		eapply "${WORKDIR}"/${X509_PATCH%.*}
-		eapply "${FILESDIR}"/${P}-X509-${X509_VER}-tests.patch
+		eapply "${FILESDIR}"/${P}-X509-$(ver_cut 1-2 ${X509_VER})-tests.patch
 
 		# We need to patch package version or any X.509 sshd will reject our ssh client
 		# with "userauth_pubkey: could not parse key: string is too large [preauth]"
@@ -184,14 +169,23 @@ src_prepare() {
 		local hpn_patchdir="${T}/${P}-hpn${HPN_VER}"
 		mkdir "${hpn_patchdir}"
 		cp $(printf -- "${DISTDIR}/%s\n" "${HPN_PATCHES[@]}") "${hpn_patchdir}"
-		pushd "${hpn_patchdir}"
-		eapply "${FILESDIR}"/${P}-hpn-glue.patch
-		use X509 && eapply "${FILESDIR}"/${P}-hpn-X509-glue.patch
-		use sctp && eapply "${FILESDIR}"/${P}-hpn-sctp-glue.patch
-		popd
+		pushd "${hpn_patchdir}" &>/dev/null || die
+		eapply "${FILESDIR}"/${PN}-8.1_p1-hpn-glue.patch
+		if use X509; then
+			einfo "Will disable MT AES cipher due to incompatbility caused by X509 patch set"
+			# X509 and AES-CTR-MT don't get along, let's just drop it
+			rm openssh-${HPN_PV//./_}-hpn-AES-CTR-${HPN_VER}.diff || die
+			eapply "${FILESDIR}"/${PN}-8.0_p1-hpn-X509-glue.patch
+		fi
+		use sctp && eapply "${FILESDIR}"/${PN}-7.9_p1-hpn-sctp-glue.patch
+		popd &>/dev/null || die
 
 		eapply "${hpn_patchdir}"
-		eapply "${FILESDIR}/openssh-7.9_p1-hpn-openssl-1.1.patch"
+
+		if ! use X509; then
+			eapply "${FILESDIR}/openssh-7.9_p1-hpn-openssl-1.1.patch"
+			eapply "${FILESDIR}/openssh-8.0_p1-hpn-version.patch"
+		fi
 
 		einfo "Patching Makefile.in for HPN patch set ..."
 		sed -i \
@@ -266,11 +260,6 @@ src_prepare() {
 	)
 	sed -i "${sed_args[@]}" configure{.ac,} || die
 
-	if has_version ">=dev-libs/openssl-1.1.0" ; then
-		epatch "${FILESDIR}/${PN}-openssl-1.1.0-configure.patch"
-		epatch "${FILESDIR}/${PN}-openssl-1.1.0-versioning.patch"
-	fi
-
 	eautoreconf
 }
 
@@ -279,6 +268,7 @@ src_configure() {
 
 	use debug && append-cppflags -DSANDBOX_SECCOMP_FILTER_DEBUG
 	use static && append-ldflags -static
+	use xmss && append-cflags -DWITH_XMSS
 
 	local myconf=(
 		--with-ldflags="${LDFLAGS}"
@@ -332,7 +322,7 @@ src_test() {
 	mkdir -p "${sshhome}"/.ssh
 	for t in "${tests[@]}" ; do
 		# Some tests read from stdin ...
-		HOMEDIR="${sshhome}" HOME="${sshhome}" \
+		HOMEDIR="${sshhome}" HOME="${sshhome}" SUDO="" \
 		emake -k -j1 ${t} </dev/null \
 			&& passed+=( "${t}" ) \
 			|| failed+=( "${t}" )
