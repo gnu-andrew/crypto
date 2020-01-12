@@ -1,0 +1,73 @@
+--- a/buckets/ssl_buckets.c.orig	2016-06-30 16:45:07.000000000 +0100
++++ b/buckets/ssl_buckets.c	2020-01-12 06:16:41.700551149 +0000
+@@ -54,6 +54,12 @@
+ 
+ #if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10100000L
+ #define USE_OPENSSL_1_1_API
++#ifndef X509_get_notBefore
++#define X509_get_notBefore X509_get0_notBefore
++#endif
++#ifndef X509_get_notAfter
++#define X509_get_notAfter X509_get0_notAfter
++#endif
+ #endif
+ 
+ 
+@@ -681,7 +687,11 @@
+         apr_pool_create(&subpool, ctx->pool);
+ 
+         /* Borrow the chain to pass to the callback. */
++#ifdef USE_OPENSSL_1_1_API
++        chain = X509_STORE_CTX_get0_chain(store_ctx);
++#else
+         chain = X509_STORE_CTX_get_chain(store_ctx);
++#endif
+ 
+         /* If the chain can't be retrieved, just pass the current
+            certificate. */
+@@ -1146,7 +1156,11 @@
+ #ifdef SSL_VERBOSE
+         /* Warn when compile-time and run-time version of OpenSSL differ in
+            major/minor version number. */
++#ifdef USE_OPENSSL_1_1_API
++	long libver = OpenSSL_version_num();
++#else
+         long libver = SSLeay();
++#endif
+ 
+         if ((libver ^ OPENSSL_VERSION_NUMBER) & 0xFFF00000) {
+             serf__log(SSL_VERBOSE, __FILE__,
+@@ -1158,13 +1172,23 @@
+ 
+ #ifdef USE_OPENSSL_1_1_API
+         OPENSSL_malloc_init();
++#ifdef OPENSSL_LOAD_CONF
++#define CONF_LOAD | OPENSSL_INIT_LOAD_CONFIG
+ #else
+-        CRYPTO_malloc_init();
++#define CONF_LOAD
+ #endif
++	OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS |
++			 OPENSSL_INIT_LOAD_CRYPTO_STRINGS |
++			 OPENSSL_INIT_ADD_ALL_CIPHERS |
++			 OPENSSL_INIT_ADD_ALL_DIGESTS
++			 CONF_LOAD, NULL);
++#else
++        CRYPTO_malloc_init();
+         ERR_load_crypto_strings();
+         SSL_load_error_strings();
+         SSL_library_init();
+         OpenSSL_add_all_algorithms();
++#endif
+ 
+ #if APR_HAS_THREADS && !defined(USE_OPENSSL_1_1_API)
+         numlocks = CRYPTO_num_locks();
+@@ -1798,7 +1822,7 @@
+     /* set expiry dates */
+     bio = BIO_new(BIO_s_mem());
+     if (bio) {
+-        ASN1_TIME *notBefore, *notAfter;
++        const ASN1_TIME *notBefore, *notAfter;
+         char buf[256];
+ 
+         memset (buf, 0, sizeof (buf));
