@@ -1,0 +1,9 @@
+*mupdf-1.16.1 (26 Apr 2020)
+
+  26 Apr 2020; Andrew John Hughes <gnu_andrew@member.fsf.org>
+  +files/mupdf-1.10a-add-desktop-pc-xpm-files.patch,
+  +files/mupdf-1.14-libressl.patch, +files/mupdf-1.15-CFLAGS.patch,
+  +files/mupdf-1.15-Makefile.patch, +files/mupdf-1.15-openssl-x11.patch,
+  +files/mupdf-1.16.1-freeglut-fg_gl2-gcc-10.patch,
+  +files/mupdf-openssl-1.1.0.patch, +metadata.xml, +mupdf-1.16.1.ebuild:
+  app-text/mupdf: Support OpenSSL 1.1.0.

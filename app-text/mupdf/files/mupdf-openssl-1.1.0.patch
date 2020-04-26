@@ -1,0 +1,62 @@
+--- a/source/helpers/pkcs7/pkcs7-openssl.c.old	2019-08-02 15:49:26.000000000 +0100
++++ b/source/helpers/pkcs7/pkcs7-openssl.c	2020-04-25 03:56:27.436246285 +0100
+@@ -116,6 +116,17 @@
+ #warning detect version of openssl at compile time
+ #endif
+ 
++#if OPENSSL_API_COMPAT >= 0x10100000L
++#define M_PKCS12_bag_type PKCS12_SAFEBAG_get_nid
++#define M_PKCS12_cert_bag_type PKCS12_SAFEBAG_get_bag_nid
++#define PKCS12_certbag2x509 PKCS12_SAFEBAG_get1_cert
++#ifdef OPENSSL_LOAD_CONF
++#define CONF_LOAD | OPENSSL_INIT_LOAD_CONFIG
++#else
++#define CONF_LOAD
++#endif
++#endif
++
+ typedef struct
+ {
+ 	fz_context *ctx;
+@@ -313,7 +324,9 @@
+ 
+ exit:
+ 	BIO_free(p7bio);
++#if OPENSSL_VERSION_NUMBER < 0x10100000
+ 	ERR_free_strings();
++#endif
+ 
+ 	return res;
+ }
+@@ -403,7 +416,9 @@
+ 
+ exit:
+ 	X509_STORE_CTX_free(ctx);
++#if OPENSSL_VERSION_NUMBER < 0x10100000
+ 	ERR_free_strings();
++#endif
+ 
+ 	return res;
+ }
+@@ -731,12 +746,21 @@
+ 		signer->ctx = ctx;
+ 		signer->refs = 1;
+ 
++#if OPENSSL_VERSION_NUMBER < 0x10100000
+ 		OpenSSL_add_all_algorithms();
+ 
+ 		EVP_add_digest(EVP_md5());
+ 		EVP_add_digest(EVP_sha1());
+ 
+ 		ERR_load_crypto_strings();
++#else
++		OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS |
++				    OPENSSL_INIT_ADD_ALL_DIGESTS |
++				    OPENSSL_INIT_LOAD_CRYPTO_STRINGS
++				    CONF_LOAD, NULL);
++		EVP_add_digest(EVP_md5());
++		EVP_add_digest(EVP_sha1());
++#endif
+ 
+ 		ERR_clear_error();
+ 
