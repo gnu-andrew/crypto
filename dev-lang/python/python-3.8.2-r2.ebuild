@@ -1,4 +1,4 @@
-# Copyright 1999-2019 Gentoo Authors
+# Copyright 1999-2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="7"
@@ -8,12 +8,12 @@ inherit autotools flag-o-matic pax-utils python-utils-r1 toolchain-funcs
 
 MY_P="Python-${PV}"
 PYVER=$(ver_cut 1-2)
-PATCHSET_VERSION="3.8.0"
+PATCHSET="python-gentoo-patches-3.8.2"
 
 DESCRIPTION="An interpreted, interactive, object-oriented programming language"
 HOMEPAGE="https://www.python.org/"
 SRC_URI="https://www.python.org/ftp/python/${PV}/${MY_P}.tar.xz
-	https://dev.gentoo.org/~mgorny/dist/python-gentoo-patches-${PATCHSET_VERSION}.tar.xz"
+	https://dev.gentoo.org/~mgorny/dist/python/${PATCHSET}.tar.xz"
 S="${WORKDIR}/${MY_P}"
 
 LICENSE="PSF-2"
@@ -29,9 +29,10 @@ RESTRICT="!test? ( test )"
 
 RDEPEND="app-arch/bzip2:=
 	app-arch/xz-utils:=
+	dev-libs/libffi:=
 	sys-apps/util-linux:=
 	>=sys-libs/zlib-1.1.3:=
-	virtual/libffi:=
+	virtual/libcrypt:=
 	virtual/libintl
 	gdbm? ( sys-libs/gdbm:=[berkdb] )
 	ncurses? ( >=sys-libs/ncurses-5.2:= )
@@ -64,9 +65,8 @@ src_prepare() {
 	rm -fr Modules/zlib || die
 
 	local PATCHES=(
-		"${FILESDIR}/python-3.7.5-hashlib.patch"
+		"${WORKDIR}/${PATCHSET}"
 		"${FILESDIR}/${PN}-${SLOT}-openssl-1.1.0.patch"
-		"${WORKDIR}/patches"
 	)
 
 	default
@@ -112,6 +112,11 @@ src_configure() {
 		use hardened && replace-flags -O3 -O2
 	fi
 
+	# https://bugs.gentoo.org/700012
+	if is-flagq -flto || is-flagq '-flto=*'; then
+		append-cflags $(test-flags-CC -ffat-lto-objects)
+	fi
+
 	# Export CXX so it ends up in /usr/lib/python3.X/config/Makefile.
 	tc-export CXX
 
@@ -129,6 +134,11 @@ src_configure() {
 	fi
 
 	local myeconfargs=(
+		# glibc-2.30 removes it; since we can't cleanly force-rebuild
+		# Python on glibc upgrade, remove it proactively to give
+		# a chance for users rebuilding python before glibc
+		ac_cv_header_stropts_h=no
+
 		--enable-shared
 		$(use_enable ipv6)
 		--infodir='${prefix}/share/info'
@@ -261,47 +271,45 @@ src_install() {
 		-i "${ED}/etc/conf.d/pydoc-${PYVER}" \
 		"${ED}/etc/init.d/pydoc-${PYVER}" || die "sed failed"
 
-	# for python-exec
-	local vars=( EPYTHON PYTHON_SITEDIR PYTHON_SCRIPTDIR )
-
+	local -x EPYTHON=python${PYVER}
 	# if not using a cross-compiler, use the fresh binary
 	if ! tc-is-cross-compiler; then
 		local -x PYTHON=./python
 		local -x LD_LIBRARY_PATH=${LD_LIBRARY_PATH+${LD_LIBRARY_PATH}:}${PWD}
 	else
-		vars=( PYTHON "${vars[@]}" )
+		local -x PYTHON=${EPREFIX}/usr/bin/${EPYTHON}
 	fi
 
-	python_export "python${PYVER}" "${vars[@]}"
 	echo "EPYTHON='${EPYTHON}'" > epython.py || die
 	python_domodule epython.py
 
 	# python-exec wrapping support
 	local pymajor=${PYVER%.*}
-	mkdir -p "${D}${PYTHON_SCRIPTDIR}" || die
+	local scriptdir=${D}$(python_get_scriptdir)
+	mkdir -p "${scriptdir}" || die
 	# python and pythonX
 	ln -s "../../../bin/${abiver}" \
-		"${D}${PYTHON_SCRIPTDIR}/python${pymajor}" || die
-	ln -s "python${pymajor}" "${D}${PYTHON_SCRIPTDIR}/python" || die
+		"${scriptdir}/python${pymajor}" || die
+	ln -s "python${pymajor}" "${scriptdir}/python" || die
 	# python-config and pythonX-config
 	# note: we need to create a wrapper rather than symlinking it due
 	# to some random dirname(argv[0]) magic performed by python-config
-	cat > "${D}${PYTHON_SCRIPTDIR}/python${pymajor}-config" <<-EOF || die
+	cat > "${scriptdir}/python${pymajor}-config" <<-EOF || die
 		#!/bin/sh
 		exec "${abiver}-config" "\${@}"
 	EOF
-	chmod +x "${D}${PYTHON_SCRIPTDIR}/python${pymajor}-config" || die
+	chmod +x "${scriptdir}/python${pymajor}-config" || die
 	ln -s "python${pymajor}-config" \
-		"${D}${PYTHON_SCRIPTDIR}/python-config" || die
+		"${scriptdir}/python-config" || die
 	# 2to3, pydoc
 	ln -s "../../../bin/2to3-${PYVER}" \
-		"${D}${PYTHON_SCRIPTDIR}/2to3" || die
+		"${scriptdir}/2to3" || die
 	ln -s "../../../bin/pydoc${PYVER}" \
-		"${D}${PYTHON_SCRIPTDIR}/pydoc" || die
+		"${scriptdir}/pydoc" || die
 	# idle
 	if use tk; then
 		ln -s "../../../bin/idle${PYVER}" \
-			"${D}${PYTHON_SCRIPTDIR}/idle" || die
+			"${scriptdir}/idle" || die
 	fi
 }
 
