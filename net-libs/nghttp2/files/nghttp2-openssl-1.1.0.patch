@@ -1,0 +1,10 @@
+--- a/src/shrpx_tls.cc.old	2020-06-02 13:08:45.000000000 +0100
++++ b/src/shrpx_tls.cc	2020-06-16 06:02:48.152058879 +0100
+@@ -44,6 +44,7 @@
+ #include <openssl/x509.h>
+ #include <openssl/x509v3.h>
+ #include <openssl/rand.h>
++#include <openssl/bn.h>
+ #include <openssl/dh.h>
+ #ifndef OPENSSL_NO_OCSP
+ #  include <openssl/ocsp.h>
